@@ -4,7 +4,8 @@
 //   node test/selftest.js          all tests
 //   node test/selftest.js --perf   also the scale fixture (Chronicle fixture E)
 import { spawnSync } from "node:child_process";
-import { readdirSync } from "node:fs";
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -50,4 +51,12 @@ if (plugin.skipped) console.log("⏭️  claude plugin validate — skipped (Cla
 else console.log(`${mark(plugin.ok)} claude plugin validate`);
 if (plugin.ok === false) console.log(plugin.output);
 
-process.exit(tests.fail === 0 && tests.code === 0 && gov.status === 0 && plugin.ok !== false ? 0 : 1);
+const ok = tests.fail === 0 && tests.code === 0 && gov.status === 0 && plugin.ok !== false;
+// A pass is recorded in Syno's own settings folder, so /syno:migrate knows the old installs can go (PRD X-03 rule 4).
+if (ok) {
+  const home = process.env.SYNO_HOME || join(homedir(), ".claude", "syno");
+  const version = JSON.parse(readFileSync(join(ROOT, ".claude-plugin", "plugin.json"), "utf8")).version;
+  mkdirSync(home, { recursive: true });
+  writeFileSync(join(home, "selftest.json"), `${JSON.stringify({ version, passedAt: new Date().toISOString(), tests: tests.pass }, null, 2)}\n`);
+}
+process.exit(ok ? 0 : 1);
