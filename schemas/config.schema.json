@@ -35,7 +35,8 @@
       "properties": {
         "versionSource": {
           "type": "string",
-          "pattern": "^(manifest:.+|git-tags|none)$"
+          "pattern": "^(manifest:.+|git-tags|none)$",
+          "patternHint": "manifest:<path>, git-tags or none"
         },
         "tagPattern": {
           "type": "string",
@@ -129,7 +130,8 @@
           "type": "array",
           "items": {
             "type": "string",
-            "pattern": "\\.(localhost|test)$"
+            "pattern": "\\.(localhost|test)$",
+            "patternHint": "a host ending in .localhost or .test"
           }
         }
       }

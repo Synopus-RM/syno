@@ -32,7 +32,8 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^\\d{8}-\\d{6}-[a-z0-9-]+$"
+          "pattern": "^\\d{8}-\\d{6}-[a-z0-9-]+$",
+          "patternHint": "a change ID like 20261030-101500-fix-totals"
         },
         "type": {
           "enum": [
@@ -59,7 +60,8 @@
           "type": "array",
           "items": {
             "type": "string",
-            "pattern": "^IDEA-\\d{4,}$"
+            "pattern": "^IDEA-\\d{4,}$",
+            "patternHint": "an idea ID like IDEA-0001"
           }
         },
         "links": {
@@ -99,7 +101,8 @@
             "string",
             "null"
           ],
-          "pattern": "^[0-9a-f]{7,40}$"
+          "pattern": "^[0-9a-f]{7,40}$",
+          "patternHint": "a git commit ID (7 to 40 hex characters)"
         }
       }
     },
@@ -149,7 +152,8 @@
     },
     "version": {
       "type": "string",
-      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+      "patternHint": "a version like 1.2.0 or 1.2.0-rc.1"
     },
     "date": {
       "type": "string",
@@ -174,7 +178,8 @@
       "type": "array",
       "items": {
         "type": "string",
-        "pattern": "^IDEA-\\d{4,}$"
+        "pattern": "^IDEA-\\d{4,}$",
+        "patternHint": "an idea ID like IDEA-0001"
       }
     },
     "channels": {
@@ -200,7 +205,8 @@
             "string",
             "null"
           ],
-          "pattern": "^[0-9a-f]{7,40}$"
+          "pattern": "^[0-9a-f]{7,40}$",
+          "patternHint": "a git commit ID (7 to 40 hex characters)"
         }
       }
     },

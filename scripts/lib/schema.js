@@ -34,7 +34,7 @@ function checkScalar(schema, value, path, errors) {
   if (typeof value === "string") {
     if (schema.minLength !== undefined && value.length < schema.minLength) errors.push({ path: at, message: `must have at least ${schema.minLength} characters` });
     if (schema.maxLength !== undefined && value.length > schema.maxLength) errors.push({ path: at, message: `must have at most ${schema.maxLength} characters` });
-    if (schema.pattern && !new RegExp(schema.pattern).test(value)) errors.push({ path: at, message: `must match ${schema.pattern}` });
+    if (schema.pattern && !new RegExp(schema.pattern).test(value)) errors.push({ path: at, message: schema.patternHint ? `must be ${schema.patternHint}` : `must match ${schema.pattern}` });
     if (schema.format && FORMATS[schema.format] && !FORMATS[schema.format](value)) errors.push({ path: at, message: `must be a valid ${schema.format}` });
   }
   if (typeof value === "number") {
