@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/rishimurugan-synopus/syno/schemas/config.schema.json",
+  "title": "Syno config (.syno/config.json)",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "project",
+    "chronicle"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 2
+    },
+    "project": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repoUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "chronicle": {
+      "type": "object",
+      "properties": {
+        "versionSource": {
+          "type": "string",
+          "pattern": "^(manifest:.+|git-tags|none)$"
+        },
+        "tagPattern": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tagPrefix": {
+          "type": "string"
+        },
+        "snapshot": {
+          "type": "object",
+          "properties": {
+            "depth": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10
+            },
+            "ignore": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "channels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "docsDir": {
+          "type": "string",
+          "minLength": 1
+        },
+        "changelogPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "nudges": {
+          "enum": [
+            "off",
+            "tags",
+            "commits"
+          ]
+        },
+        "recordAuthors": {
+          "type": "boolean"
+        }
+      }
+    },
+    "sigma": {
+      "type": "object",
+      "properties": {
+        "target": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 6
+        },
+        "gates": {
+          "type": "object"
+        }
+      }
+    },
+    "compliance": {
+      "type": "object",
+      "properties": {
+        "jurisdictions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "country"
+            ],
+            "properties": {
+              "country": {
+                "type": "string",
+                "minLength": 2
+              },
+              "state": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "security": {
+      "type": "object",
+      "properties": {
+        "localHosts": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "\\.(localhost|test)$"
+          }
+        }
+      }
+    },
+    "reports": {
+      "type": "object",
+      "properties": {
+        "theme": {
+          "enum": [
+            "sky-glass"
+          ]
+        }
+      }
+    },
+    "locale": {
+      "enum": [
+        "en"
+      ]
+    }
+  }
+}

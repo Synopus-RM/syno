@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/rishimurugan-synopus/syno/schemas/change.schema.json",
+  "title": "Chronicle change (.syno/changes/<YYYYMMDD-HHMMSS>-<slug>.json)",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "id",
+    "type",
+    "summary",
+    "breaking",
+    "ideas",
+    "created"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^\\d{8}-\\d{6}-[a-z0-9-]+$"
+    },
+    "type": {
+      "enum": [
+        "Added",
+        "Changed",
+        "Deprecated",
+        "Removed",
+        "Fixed",
+        "Security"
+      ]
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "details": {
+      "type": "string"
+    },
+    "breaking": {
+      "type": "boolean"
+    },
+    "ideas": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^IDEA-\\d{4,}$"
+      }
+    },
+    "links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "label",
+          "url"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "url": {
+            "type": "string",
+            "format": "uri-http"
+          }
+        }
+      }
+    },
+    "author": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "created": {
+      "type": "string",
+      "format": "date"
+    },
+    "commit": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{7,40}$"
+    }
+  }
+}

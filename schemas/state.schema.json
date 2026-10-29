@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/rishimurugan-synopus/syno/schemas/state.schema.json",
+  "title": "Syno state (.syno/state.json, written by Syno only)",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "lastSyncedTag",
+    "renderHashes"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "lastSyncedTag": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "renderHashes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    }
+  }
+}
