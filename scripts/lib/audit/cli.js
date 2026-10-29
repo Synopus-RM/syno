@@ -40,6 +40,9 @@ function audits(root) {
 
 export const latestAudit = (root) => audits(root).at(-1) ?? null;
 
+/** Every recorded audit, oldest first, for Syno Sigma. */
+export const auditHistory = (root) => audits(root);
+
 /** Open findings from the latest audit, optionally of one severity (the gates use critical). */
 export function openFindings(root, severity) {
   return (latestAudit(root)?.findings ?? []).filter((f) => f.status === "open" && (!severity || f.severity === severity));

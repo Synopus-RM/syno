@@ -31,7 +31,7 @@ export const FUNCTIONS = {
 };
 const ALIASES = { "5s": "fives" };
 export const CHRONICLE = new Set(["init", "ignore", "adopt", "idea", "change", "release", "publish", "notes", "snapshot", "structure", "diff", "timeline", "render", "validate", "sync"]);
-const BOOLEAN = new Set(["json", "confirm", "dry-run", "all", "empty", "check", "ci", "history", "perf", "accept", "overwrite-edits", "breaking"]);
+const BOOLEAN = new Set(["json", "confirm", "dry-run", "all", "empty", "check", "ci", "history", "perf", "accept", "overwrite-edits", "breaking", "failed"]);
 
 /** Splits argv into positional words and --flags (`--key value`, `--key=value`, or a boolean). */
 export function parseArgs(argv) {

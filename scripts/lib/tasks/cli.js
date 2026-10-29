@@ -3,7 +3,7 @@
 // commands enforce Syno's rules on top of the engine:
 //   syno tasks check                  engine warnings, plus: no task starts without an acceptance criterion
 //   syno tasks set <id> <status> [--percent N] [--next T] [--blocker T] [--confirm]
-//   syno tasks tick <id> <criterion number | all> [--confirm]
+//   syno tasks tick <id> <criterion number | all> [--failed] [--confirm]   --failed: it failed its first check (a defect for Syno Sigma)
 //   syno tasks status | report [--confirm]
 import { join } from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
@@ -35,7 +35,7 @@ function findNode(nodes, id) {
   return null;
 }
 
-const acceptanceOf = (task) => (task.acceptance ?? []).map((a) => (typeof a === "string" ? { text: a, done: false } : { text: a.text, done: Boolean(a.done) }));
+const acceptanceOf = (task) => (task.acceptance ?? []).map((a) => (typeof a === "string" ? { text: a, done: false } : { ...a, text: a.text, done: Boolean(a.done) }));
 
 /** Syno's rule (AC-TA.1): an in-progress task must say how we'll know it's done. */
 export function synoWarnings(breakdown) {
@@ -100,8 +100,14 @@ async function tick(ctx, breakdown, [id, which]) {
   const list = acceptanceOf(task);
   const picks = which === "all" ? list.map((_, i) => i) : [Number(which) - 1];
   if (picks.some((i) => !(i >= 0 && i < list.length))) throw usage(`${id} has ${list.length} acceptance criteria; pick a number from 1 to ${list.length}, or all.`);
+  const names = picks.map((i) => `"${list[i].text}"`).join(", ");
+  if (ctx.flags.failed === true) {
+    // Only a criterion's first check counts: a later failure is the same defect.
+    task.acceptance = list.map((a, i) => (picks.includes(i) && !a.done && !a.failedFirst ? { ...a, failedFirst: true, failedOn: today(nowOf(ctx)) } : a));
+    return save(ctx, breakdown, [`${id}: ${names} didn't pass ${picks.length === 1 ? "its" : "their"} first check (counted as a defect for Syno Sigma).`, ""]);
+  }
   task.acceptance = list.map((a, i) => (picks.includes(i) ? { ...a, done: true } : a));
-  return save(ctx, breakdown, [`${id}: ${picks.map((i) => `"${list[i].text}"`).join(", ")} met.`, ""]);
+  return save(ctx, breakdown, [`${id}: ${names} met.`, ""]);
 }
 
 async function report(ctx, sub) {

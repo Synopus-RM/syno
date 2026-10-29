@@ -49,7 +49,10 @@ function records(root) {
 export const latestTestFor = (root, task) => records(root).filter((r) => r.task === task).at(-1) ?? null;
 
 /** Every recorded Fail, for Syno Sigma's defect count. */
-export const failedSteps = (root) => records(root).flatMap((r) => r.scenarios.flatMap((s) => s.steps.filter((st) => st.status === "fail").map((st) => ({ guide: r.title, task: r.task, step: st.step }))));
+export const failedSteps = (root) => records(root).flatMap((r) => r.scenarios.flatMap((s) => s.steps.filter((st) => st.status === "fail").map((st) => ({ guide: r.title, task: r.task, step: st.step, date: r.date }))));
+
+/** Every answered step is one check, for Syno Sigma's opportunity count. */
+export const stepCount = (root) => records(root).reduce((n, r) => n + r.totals.pass + r.totals.fail, 0);
 
 export function testReport(rec, { project }) {
   const { pass, fail, unanswered } = rec.totals;
