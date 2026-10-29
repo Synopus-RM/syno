@@ -1,12 +1,15 @@
 // Syno's project config and Chronicle's state (PRD §8). Config is edited by
-// the owner; state is written by Syno only. A version 1 config from PRD 0.1
+// the owner and committed; state is written by Syno only and stays local. A version 1 config from PRD 0.1
 // (Chronicle fields at the top level) is migrated to version 2 when read.
 import { join } from "node:path";
 import { jsonText, readJson } from "../fsutil.js";
 
 export const SYNO = ".syno";
 export const CONFIG_PATH = `${SYNO}/config.json`;
-export const STATE_PATH = `${SYNO}/state.json`;
+// State holds render hashes for spotting hand edits on this machine. It is
+// local (git-ignored), because it changes on every render and would make two
+// branches conflict (AC-CH-04.2).
+export const STATE_PATH = `${SYNO}/local/state.json`;
 
 export const CHRONICLE_DEFAULTS = {
   versionSource: "none",

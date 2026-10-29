@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/rishimurugan-synopus/syno/schemas/state.schema.json",
-  "title": "Syno state (.syno/state.json, written by Syno only)",
+  "title": "Syno state (.syno/local/state.json, written by Syno only, kept on this machine)",
   "type": "object",
   "required": [
     "schemaVersion",

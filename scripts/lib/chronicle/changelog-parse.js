@@ -92,8 +92,14 @@ function parseSections(all, from, to) {
 export function parseChangelog(text) {
   const marked = markerRegion(text);
   if (marked) {
-    const all = lines(marked.inner);
-    return { ...parseSections(all, 0, all.length), region: { start: marked.start, end: marked.end }, hasMarkers: true };
+    // Inside Syno's own block, everything after "## Earlier history" is kept
+    // verbatim, except the compare links Syno writes after it.
+    const at = marked.inner.search(/^## Earlier history\s*$/m);
+    const head = at >= 0 ? marked.inner.slice(0, at) : marked.inner;
+    const tail = at >= 0 ? marked.inner.slice(at).replace(/^## Earlier history\s*\n/, "") : "";
+    const earlier = tail.split("\n").reverse().reduce((acc, l) => (acc.length || !(LINK_REF.test(l) || !l.trim()) ? [l, ...acc] : acc), []).join("\n").trim();
+    const all = lines(head);
+    return { ...parseSections(all, 0, all.length), earlier, region: { start: marked.start, end: marked.end }, hasMarkers: true };
   }
   const all = lines(text);
   const first = all.findIndex(({ line }) => VERSION_HEADING.test(line));

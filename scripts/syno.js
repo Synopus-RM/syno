@@ -30,7 +30,7 @@ const FUNCTIONS = {
   migrate: "./lib/migrate/cli.js",
 };
 const ALIASES = { "5s": "fives" };
-const CHRONICLE = new Set(["init", "adopt", "idea", "change", "release", "publish", "notes", "snapshot", "structure", "diff", "timeline", "render", "validate", "sync"]);
+const CHRONICLE = new Set(["init", "ignore", "adopt", "idea", "change", "release", "publish", "notes", "snapshot", "structure", "diff", "timeline", "render", "validate", "sync"]);
 const BOOLEAN = new Set(["json", "confirm", "dry-run", "all", "empty", "check", "ci", "history", "perf"]);
 
 /** Splits argv into positional words and --flags (`--key value`, `--key=value`, or a boolean). */
