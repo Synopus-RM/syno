@@ -27,6 +27,7 @@ The usual laws for each area and place. A starting point, not legal advice: chec
 | Place | Law | Section | What it requires | Source |
 | --- | --- | --- | --- | --- |
 | India (central) | Payment and Settlement Systems Act, 2007 and RBI directions on payment aggregators | RBI Master Directions | Take payments only through an RBI-authorised payment aggregator; never store card numbers (use tokenisation). | https://www.rbi.org.in |
+| India (central) | RBI circular on storage of payment system data (6 April 2018) | whole circular | Payment data is stored only in India. | https://www.rbi.org.in |
 
 ## Lending and credit
 
@@ -114,7 +115,6 @@ The usual laws for each area and place. A starting point, not legal advice: chec
 
 | Place | Law | Section | What it requires | Source |
 | --- | --- | --- | --- | --- |
-| India (central) | RBI circular on storage of payment system data (6 April 2018) | whole circular | Payment data is stored only in India. | https://www.rbi.org.in |
 | India (central) | Digital Personal Data Protection Act, 2023 | s. 16 | Personal data may go abroad except to countries the government restricts; check the current list. | https://www.meity.gov.in |
 
 ## Tax invoices

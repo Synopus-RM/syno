@@ -66,7 +66,7 @@ export const LAWS = [
   L("it-security", "IN", "Information Technology Act, 2000", "ss. 43A, 72A", "Reasonable security practices for data you hold; no disclosing personal information in breach of contract.", INDIACODE),
   L("it-security", "IN", "CERT-In Directions under s. 70B(6) of the IT Act (28 April 2022)", "Directions 2, 4, 5", "Report cyber incidents to CERT-In within 6 hours; keep ICT logs for 180 days in India; sync clocks to NTP.", "https://www.cert-in.org.in"),
   L("payments", "IN", "Payment and Settlement Systems Act, 2007 and RBI directions on payment aggregators", "RBI Master Directions", "Take payments only through an RBI-authorised payment aggregator; never store card numbers (use tokenisation).", RBI),
-  L("cross-border", "IN", "RBI circular on storage of payment system data (6 April 2018)", "whole circular", "Payment data is stored only in India.", RBI),
+  L("payments", "IN", "RBI circular on storage of payment system data (6 April 2018)", "whole circular", "Payment data is stored only in India.", RBI),
   L("cross-border", "IN", "Digital Personal Data Protection Act, 2023", "s. 16", "Personal data may go abroad except to countries the government restricts; check the current list.", MEITY),
   L("lending", "IN", "RBI (Digital Lending) Directions, 2025", "whole directions", "Lend only through a regulated entity; key fact statement; loan money flows directly between borrower and lender's accounts; cooling-off period; grievance officer.", RBI),
   L("lending", "IN-TN", "Tamil Nadu Prohibition of Charging Exorbitant Interest Act, 2003", "ss. 3-4", "No interest above the rates the state allows.", "https://www.tn.gov.in"),
