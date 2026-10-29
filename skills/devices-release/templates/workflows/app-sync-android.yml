@@ -1,0 +1,111 @@
+name: Android release
+
+# Builds a signed Android App Bundle (AAB) and, when the Play service account
+# secret is set, uploads it to the chosen Play track as a draft.
+# Triggers: a `v1.2.3` tag (all platforms), an `android-v1.2.3` tag, or a manual run.
+
+on:
+  push:
+    tags: ["v*", "android-v*"]
+  workflow_dispatch:
+    inputs:
+      track:
+        description: Play track
+        type: choice
+        options: [internal, alpha, beta, production]
+        default: internal
+
+permissions:
+  contents: write
+
+env:
+  MOBILE_DIR: "{{MOBILE_PATH}}"
+  WEB_ROOT: "{{WEB_ROOT}}"
+  APP_ID: "{{APP_ID}}"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      HAS_PLAY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' && 'true' || 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install web dependencies
+        working-directory: ${{ env.WEB_ROOT }}
+        run: if [ -f package-lock.json ]; then npm ci; elif [ -f package.json ]; then npm install; fi
+
+      - name: Install mobile tooling
+        working-directory: ${{ env.MOBILE_DIR }}
+        run: npm ci
+
+      - name: Build web app and sync the Android project
+        run: python3 app-sync/tools/sync_web.py --platform android --cap-sync
+
+      - name: Check parity before shipping
+        run: python3 app-sync/tools/parity_check.py
+
+      - name: Restore upload keystore
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/upload.jks"
+
+      - name: Build signed AAB
+        working-directory: ${{ env.MOBILE_DIR }}
+        env:
+          APP_SYNC_PLATFORM: android
+        run: |
+          npx cap build android \
+            --androidreleasetype AAB \
+            --keystorepath "$RUNNER_TEMP/upload.jks" \
+            --keystorepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+            --keystorealias "${{ secrets.ANDROID_KEY_ALIAS }}" \
+            --keystorealiaspass "${{ secrets.ANDROID_KEY_PASSWORD }}"
+          find android/app/build/outputs/bundle -name "*.aab" -print
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-aab
+          path: ${{ env.MOBILE_DIR }}/android/app/build/outputs/bundle/**/*.aab
+
+      - name: Upload to Google Play
+        if: env.HAS_PLAY == 'true'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: ${{ env.APP_ID }}
+          releaseFiles: ${{ env.MOBILE_DIR }}/android/app/build/outputs/bundle/**/*.aab
+          track: ${{ inputs.track || 'internal' }}
+          status: draft
+
+  record:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Record the Android release
+        run: |
+          python3 app-sync/tools/record_release.py --platform android
+          git config user.name "app-sync"
+          git config user.email "app-sync@users.noreply.github.com"
+          git add app-sync.json
+          git diff --cached --quiet || git commit -m "chore(app-sync): record android release"
+          for i in 1 2 3; do git pull --rebase origin main && git push origin HEAD:main && break; sleep 5; done

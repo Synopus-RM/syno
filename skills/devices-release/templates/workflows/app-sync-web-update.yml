@@ -1,0 +1,117 @@
+name: Web update to apps
+
+# Runs when the web app changes on main. Live platforms already show the change,
+# so this only serves bundled ones:
+#   - mobile platforms in bundled-ota mode get an over-the-air bundle
+#   - desktop in bundled mode gets a new signed release via the updater
+# A patch version bump keeps every channel moving forward together.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "apps/**"
+      - ".github/**"
+      - "app-sync/**"
+      - "app-sync.json"
+      - "**/*.md"
+  workflow_dispatch:
+
+concurrency:
+  group: app-sync-web-update
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  WEB_ROOT: "{{WEB_ROOT}}"
+  MOBILE_DIR: "{{MOBILE_PATH}}"
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      ota: ${{ steps.p.outputs.ota }}
+      desktop: ${{ steps.p.outputs.desktop }}
+      sha: ${{ steps.bump.outputs.sha }}
+      version: ${{ steps.bump.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - id: p
+        name: Which channels need this change
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          c = json.load(open("app-sync.json"))
+          p = c.get("platforms", {})
+          on = lambda k: p.get(k, {}).get("enabled", True)
+          ota = any(on(k) and p.get(k, {}).get("mode") == "bundled-ota" for k in ("android", "ios"))
+          desk = on("desktop") and p.get("desktop", {}).get("mode", "live") == "bundled"
+          print(f"ota={'true' if ota else 'false'}")
+          print(f"desktop={'true' if desk else 'false'}")
+          PY
+      - id: bump
+        name: Bump patch version
+        if: steps.p.outputs.ota == 'true' || steps.p.outputs.desktop == 'true'
+        run: |
+          python3 app-sync/tools/sync_versions.py --bump patch
+          git config user.name "app-sync"
+          git config user.email "app-sync@users.noreply.github.com"
+          git add -A
+          version=$(python3 -c "import json;print(json.load(open('app-sync.json'))['version'])")
+          git commit -m "chore(app-sync): web update $version"
+          git push origin HEAD:main
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  ota:
+    needs: plan
+    if: needs.plan.outputs.ota == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.plan.outputs.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install web dependencies
+        working-directory: ${{ env.WEB_ROOT }}
+        run: if [ -f package-lock.json ]; then npm ci; elif [ -f package.json ]; then npm install; fi
+      - name: Install mobile tooling
+        working-directory: ${{ env.MOBILE_DIR }}
+        run: npm ci
+      - name: Build the web bundle for the mobile shell
+        run: python3 app-sync/tools/sync_web.py --platform android --platform ios
+      - name: Package the OTA bundle
+        run: python3 app-sync/tools/package_ota.py --out ota-dist
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.OTA_AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.OTA_AWS_REGION }}
+      - name: Publish (bundle first, manifest last)
+        env:
+          BUCKET: ${{ secrets.OTA_BUCKET }}
+          PREFIX: ${{ secrets.OTA_PREFIX }}
+          VERSION: ${{ needs.plan.outputs.version }}
+        run: |
+          aws s3 cp "ota-dist/$VERSION/bundle.zip" "s3://$BUCKET/$PREFIX/$VERSION/bundle.zip" --content-type application/zip
+          aws s3 cp ota-dist/manifest.json "s3://$BUCKET/$PREFIX/manifest.json" --content-type application/json --cache-control no-cache
+
+  desktop:
+    needs: plan
+    if: needs.plan.outputs.desktop == 'true'
+    uses: ./.github/workflows/app-sync-desktop.yml
+    with:
+      ref: ${{ needs.plan.outputs.sha }}
+    secrets: inherit

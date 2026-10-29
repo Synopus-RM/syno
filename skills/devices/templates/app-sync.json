@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "app": {
+    "name": "{{APP_NAME}}",
+    "shortName": "{{APP_SHORT}}",
+    "id": "in.synopus.{{SLUG_ID}}",
+    "tagline": "{{TAGLINE}}",
+    "publisher": "Synopus",
+    "website": "https://www.synopus.in"
+  },
+  "version": "1.0.0",
+  "build": 1,
+  "versionSource": "app-sync",
+  "web": {
+    "root": ".",
+    "framework": "{{FRAMEWORK}}",
+    "buildCommand": "npm run build",
+    "outputDir": "dist",
+    "bundleable": true,
+    "liveUrl": "https://{{LIVE_HOST}}"
+  },
+  "brand": {
+    "primary": "#3D5AFE",
+    "accent": "#00BFA6",
+    "background": "#0E1222",
+    "ink": "#F3F5FB",
+    "icon": "app-sync/brand/icon.png"
+  },
+  "platforms": {
+    "desktop": {
+      "enabled": true,
+      "mode": "live",
+      "path": "apps/desktop",
+      "targets": ["windows", "macos", "linux"]
+    },
+    "android": { "enabled": true, "mode": "live" },
+    "ios": { "enabled": true, "mode": "bundled-ota" }
+  },
+  "mobile": { "path": "apps/mobile" },
+  "ota": {
+    "provider": "self-hosted",
+    "baseUrl": "https://{{OTA_HOST}}/{{SLUG}}",
+    "updateUrl": "https://{{OTA_API_HOST}}/updates"
+  },
+  "decision": {
+    "source": "docs/PRD.md",
+    "prdHash": "",
+    "decidedOn": "",
+    "rationale": {
+      "desktop": "",
+      "android": "",
+      "ios": ""
+    },
+    "flags": []
+  },
+  "credit": {
+    "text": "Designed & Developed by Synopus",
+    "url": "https://www.synopus.in"
+  },
+  "state": {}
+}

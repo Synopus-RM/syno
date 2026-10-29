@@ -1,0 +1,13 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Local shell pages (boot, offline, bundled build). The live web app gets no native access.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "opener:default",
+    "updater:default",
+    "process:allow-restart",
+    "window-state:default"
+  ]
+}

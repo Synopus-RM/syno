@@ -1,0 +1,42 @@
+name: App parity
+
+# Fails the check when a desktop or mobile shell drifts from the web app:
+# versions, app ids, store floors, credit line, stray attribution, PRD changes.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install web dependencies
+        working-directory: "{{WEB_ROOT}}"
+        run: if [ -f package-lock.json ]; then npm ci; elif [ -f package.json ]; then npm install; fi
+
+      - name: Build web app into the shells
+        run: python3 app-sync/tools/sync_web.py
+
+      - name: Check parity
+        run: |
+          set +e
+          python3 app-sync/tools/parity_check.py --markdown parity.md
+          status=$?
+          cat parity.md >> "$GITHUB_STEP_SUMMARY"
+          exit $status

@@ -1,0 +1,42 @@
+{
+  "asOf": "2026-10-25",
+  "reverifyAfterDays": 60,
+  "notes": "Floors, not pins. Before any store release, re-check store rules on the web and record the result in the project's app-sync/baseline.json.",
+  "node": { "min": "22.0.0" },
+  "rust": { "min": "1.77.2" },
+  "java": { "min": "21.0.0" },
+  "capacitor": {
+    "min": "8.5.0",
+    "packages": ["@capacitor/core", "@capacitor/cli", "@capacitor/android", "@capacitor/ios"]
+  },
+  "tauri": {
+    "min": "2.11.0",
+    "packages": ["@tauri-apps/cli"]
+  },
+  "android": {
+    "targetSdk": 36,
+    "compileSdk": 36,
+    "minSdk": 24,
+    "rule": "Google Play: new apps and updates must target API 36 (Android 16) since 2026-08-31. Expect API 37 around August 2027."
+  },
+  "ios": {
+    "xcodeMin": "26.0",
+    "sdkMin": "26.0",
+    "rule": "App Store Connect: uploads must be built with Xcode 26 / iOS 26 SDK since 2026-04-28."
+  },
+  "ota": {
+    "provider_default": "self-hosted",
+    "plugin": "@capgo/capacitor-updater",
+    "note": "Ionic Appflow is being discontinued in 2026; do not build new release flows on it."
+  },
+  "registryWatch": [
+    "@capacitor/core",
+    "@capacitor/cli",
+    "@capacitor/android",
+    "@capacitor/ios",
+    "@capgo/capacitor-updater",
+    "@capgo/cli",
+    "@tauri-apps/cli",
+    "@tauri-apps/api"
+  ]
+}

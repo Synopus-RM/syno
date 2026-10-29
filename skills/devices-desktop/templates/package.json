@@ -1,0 +1,15 @@
+{
+  "name": "{{SLUG}}-desktop",
+  "private": true,
+  "version": "{{VERSION}}",
+  "description": "{{APP_NAME}} desktop app (Windows, macOS, Linux)",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "icons": "tauri icon ../../app-sync/brand/icon.png"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.0"
+  }
+}
