@@ -6,6 +6,7 @@
 //   syno pulse leave [--confirm]               revoke this machine and delete its Pulse data
 //   syno pulse set-key                         store the team enrolment key (read from stdin)
 //   syno pulse status                          what Pulse knows about this project and machine
+//   syno pulse migrate [--confirm]             move a project and this machine from Synopus Insider
 import { randomBytes } from "node:crypto";
 import { readFileSync, rmSync } from "node:fs";
 import { hostname } from "node:os";
@@ -123,7 +124,7 @@ function status(ctx) {
   const cache = project ? cachedStatus(project.projectKey) : null;
   const waiting = segments().reduce((n, f) => n + readSegment(f).length, 0);
   const lines = [
-    `Project: ${project ? `enabled ("${project.displayName}")` : findLegacyProject(ctx.repo) ? "Synopus Insider was enabled here; run /syno:migrate" : "not enabled"}`,
+    `Project: ${project ? `enabled ("${project.displayName}")` : findLegacyProject(ctx.repo) ? "Synopus Insider was enabled here; run /syno:pulse migrate" : "not enabled"}`,
     `This machine: ${isRevoked() ? "its key was revoked; join again" : creds ? (creds.cloud ? "cloud environment key" : `joined as ${creds.memberEmail}`) : "not joined"}`,
     `Panel: ${cache ? `device ${cache.device}, accepts ${[...acceptedTypes()].length} event types` : "not checked yet"}`,
     `Waiting to send: ${waiting} events`,
@@ -148,7 +149,11 @@ export async function run(ctx) {
       return setKey(readFileSync(0, "utf8"));
     case "status":
       return status(ctx);
+    case "migrate": {
+      const { migrate } = await import("./migrate.js");
+      return migrate(ctx);
+    }
     default:
-      throw usage("pulse takes: enable, disable, notice, join, leave, set-key, status.");
+      throw usage("pulse takes: enable, disable, notice, join, leave, set-key, status, migrate.");
   }
 }

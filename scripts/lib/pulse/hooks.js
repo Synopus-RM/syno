@@ -19,7 +19,7 @@ const GUIDANCE = [
 
 export const NOT_JOINED = "Pulse: enabled in this project, but this machine hasn't joined, so nothing is sent. /syno:pulse join shows what is collected.";
 export const REVOKED = "Pulse: this machine's Pulse key was revoked. Run /syno:pulse join to rejoin.";
-export const LEGACY = "Pulse: Synopus Insider was enabled in this project. Offer /syno:migrate to move it to Syno Pulse.";
+export const LEGACY = "Pulse: Synopus Insider was enabled in this project. Offer /syno:pulse migrate to move it to Syno Pulse.";
 
 function gitBranch(root) {
   try {

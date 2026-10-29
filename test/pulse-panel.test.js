@@ -159,12 +159,12 @@ test("S-02 a machine that hasn't joined, or whose key was revoked, sends nothing
   assert.equal(m.queue().length, 0);
 });
 
-test("S-02 a project Insider enabled points to /syno:migrate", async () => {
+test("S-02 a project Insider enabled points to /syno:pulse migrate", async () => {
   const m = machine();
   const repo = project();
   mkdirSync(join(repo, ".claude"), { recursive: true });
   writeFileSync(join(repo, ".claude", "insider.json"), JSON.stringify({ projectKey: "a".repeat(64), displayName: "Old" }));
-  assert.match((await m.hook("SessionStart", { cwd: repo, session_id: "s" })).lines[0], /\/syno:migrate/);
+  assert.match((await m.hook("SessionStart", { cwd: repo, session_id: "s" })).lines[0], /\/syno:pulse migrate/);
 });
 
 test("S-02 the daily roll-up goes out once a day with each function's latest result", async () => {
