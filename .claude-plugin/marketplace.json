@@ -1,0 +1,16 @@
+{
+  "name": "synopus",
+  "metadata": {
+    "description": "Claude Code plugins from Synopus."
+  },
+  "owner": {
+    "name": "Synopus"
+  },
+  "plugins": [
+    {
+      "name": "syno",
+      "source": "./",
+      "description": "Every Synopus project tool in one install, built on Six Sigma and 5S."
+    }
+  ]
+}

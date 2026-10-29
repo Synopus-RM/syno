@@ -1,0 +1,11 @@
+node_modules/
+.DS_Store
+*.log
+__pycache__/
+*.pyc
+
+# Syno's own local folders, when Syno is used on itself
+.syno/local/
+.syno/reports/
+.syno/sessions/
+.syno/trash/
