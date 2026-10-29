@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "syno-pulse": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp/pulse-server.js"]
+    }
+  }
+}

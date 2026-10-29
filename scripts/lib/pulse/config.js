@@ -31,8 +31,15 @@ const xdgState = () => process.env.XDG_STATE_HOME || join(homedir(), ".local", "
 export const configDir = () => (env("HOME") ? join(env("HOME"), "config") : join(xdgConfig(), "syno", "pulse"));
 export const stateDir = () => (env("HOME") ? join(env("HOME"), "state") : join(xdgState(), "syno", "pulse"));
 
-/** Where Synopus Insider kept its files, for /syno:migrate. */
-export const legacyDirs = () => ({ config: join(xdgConfig(), "synopus-insider"), state: join(xdgState(), "synopus-insider") });
+/**
+ * Where Synopus Insider kept its files, for /syno:migrate. With a Pulse home
+ * set (tests, unusual setups) it stays inside that home and never reads the
+ * machine's real Insider folder.
+ */
+export const legacyDirs = () =>
+  env("HOME")
+    ? { config: join(env("HOME"), "legacy", "config"), state: join(env("HOME"), "legacy", "state") }
+    : { config: join(xdgConfig(), "synopus-insider"), state: join(xdgState(), "synopus-insider") };
 
 export const paths = {
   config: () => join(configDir(), "config.json"), // { apiBase?, enrolmentKey }
