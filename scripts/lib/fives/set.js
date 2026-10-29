@@ -14,9 +14,10 @@ const SPEC = /(\bfrom\s*|\bimport\s*\(\s*|\brequire\s*\(\s*|\bimport\s+)(["'])(\
 
 export const loadStandards = (root) => readJson(join(root, STANDARDS));
 
-/** A glob with *, ** and ? as a RegExp over forward-slash paths. */
+/** A glob with *, **, ? and {a,b} as a RegExp over forward-slash paths. */
 export function globRe(glob) {
-  const body = glob.split(/(\*\*\/|\*\*|\*|\?)/).map((part) => ({ "**/": "(?:.*/)?", "**": ".*", "*": "[^/]*", "?": "[^/]" })[part] ?? part.replace(/[.+^${}()|[\]\\]/g, "\\$&")).join("");
+  const token = { "**/": "(?:.*/)?", "**": ".*", "*": "[^/]*", "?": "[^/]", "{": "(?:", "}": ")", ",": "|" };
+  const body = glob.split(/(\*\*\/|\*\*|\*|\?|\{|\}|,)/).map((part) => token[part] ?? part.replace(/[.+^$()|[\]\\]/g, "\\$&")).join("");
   return new RegExp(`^${body}$`);
 }
 

@@ -25,7 +25,7 @@ async function gatesAndOverrides(root, config) {
 }
 
 async function shaped(ctx) {
-  const config = loadConfig(ctx.repo);
+  const config = loadConfig(ctx.repo) ?? {};
   const m = await measure(ctx.repo, { date: today(nowOf(ctx)), target: Number(config.sigma?.target ?? 4) });
   const extra = await gatesAndOverrides(ctx.repo, config);
   return { m, report: sigmaReport(m, { project: config.project?.name ?? readJson(join(ctx.repo, ".syno/config.json"))?.project?.name ?? "This project", ...extra }) };
@@ -41,7 +41,7 @@ async function gateCmd(ctx) {
     task = findTask(readJson(join(ctx.repo, ".syno/tasks/breakdown.json"))?.tree, ctx.flags.task);
     if (!task) throw usage(`${ctx.flags.task} isn't a task in the breakdown.`);
   }
-  const g = await runGate(ctx.repo, loadConfig(ctx.repo), kind, { task });
+  const g = await runGate(ctx.repo, loadConfig(ctx.repo) ?? {}, kind, { task });
   return { code: g.status === "fail" ? 1 : 0, text: [g.text, ...g.items.map((i) => `  - ${i.text} [${i.id}]`)].join("\n"), data: g };
 }
 

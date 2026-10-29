@@ -112,3 +112,68 @@ test("S-14 globs and import specifiers resolve the way bundlers read them", () =
   assert.equal(resolveSpec("src/b.ts", "./lib", files), "src/lib/index.ts");
   assert.equal(resolveSpec("src/b.ts", "./missing", files), null);
 });
+
+// Chunk 4.5: Shine, Standardize and Sustain.
+import { errorCount, shineCommands } from "../scripts/lib/fives/shine.js";
+import { proposeStandards, checkStandards } from "../scripts/lib/fives/standards.js";
+import { scores } from "../scripts/lib/fives/score.js";
+import { handle as fivesHook } from "../scripts/lib/fives/hooks.js";
+import { renderReport } from "../scripts/lib/report/render.js";
+import { fivesReport } from "../scripts/lib/fives/score.js";
+
+test("S-14 Shine finds the project's own checks and only previews them without --confirm", () => {
+  const { root, syno } = fixtureH();
+  writeFileSync(join(root, "pnpm-lock.yaml"), "");
+  writeFileSync(join(root, "tsconfig.json"), "{}");
+  writeFileSync(join(root, "package.json"), JSON.stringify({ scripts: { lint: "eslint .", "format:check": "prettier --check ." }, devDependencies: { typescript: "5" } }));
+  assert.deepEqual(shineCommands(root), [{ kind: "lint", command: "pnpm run lint" }, { kind: "format", command: "pnpm run format:check" }, { kind: "types", command: "npx tsc --noEmit" }]);
+  const preview = JSON.parse(syno("5s", "shine", "--json").stdout);
+  assert.equal(preview.applied, false);
+  assert.ok(!existsSync(join(root, ".syno/local/fives/shine.json")));
+  assert.equal(errorCount(1, "✖ 12 problems (10 errors, 2 warnings)"), 12);
+  assert.equal(errorCount(2, "Found 3 errors in 2 files."), 3);
+  assert.equal(errorCount(1, "[warn] Code style issues found in 4 files. Run Prettier to fix."), 4);
+  assert.equal(errorCount(0, "all good"), 0);
+  assert.equal(errorCount(1, "crashed"), 1);
+});
+
+test("S-14 Standardize proposes what the project already does most, then checks against it", () => {
+  const { root, syno } = fixtureH();
+  for (const f of ["src/invoice-list.js", "src/invoice-total.js", "src/share-sheet.js"]) writeFileSync(join(root, f), "export {};\n");
+  writeFileSync(join(root, "src/shareButton.js"), "x\n".repeat(320));
+  const proposed = JSON.parse(syno("5s", "standardize", "--confirm", "--json").stdout).standards;
+  assert.deepEqual(proposed.naming, [{ match: "**/*.{js,mjs,cjs,ts}", style: "kebab-case", why: "most scripts here already use kebab-case (4 of 5)" }]);
+  assert.deepEqual(proposed.required, ["README.md", "LICENSE"]);
+  const out = syno("5s", "standardize").stdout;
+  assert.match(out, /src\/shareButton\.js: named in camelCase; the standard is kebab-case/);
+  assert.match(out, /src\/shareButton\.js: 321 lines, over the 300-line limit/);
+  assert.match(out, /README\.md: a required file is missing/);
+});
+
+test("S-14 Sustain scores each S, saves the check and the trend, and sends the scores to Pulse", () => {
+  const { root, syno } = fixtureH();
+  const res = JSON.parse(syno("5s", "--confirm", "--json").stdout);
+  assert.deepEqual(Object.keys(res.check.scores), ["sort", "set", "shine", "standardize", "sustain", "overall"]);
+  assert.equal(res.check.scores.set, null, "no standards yet");
+  assert.equal(res.check.scores.sort, 100 - 30 - 2);
+  assert.deepEqual(JSON.parse(readFileSync(join(root, ".syno/5s/2026-10-30.json"), "utf8")), res.check);
+  assert.deepEqual(res.problems, []);
+  assert.match(readFileSync(join(root, ".syno/reports/5s/latest.md"), "utf8"), /Score for each step/);
+});
+
+test("S-14 Sustain counts the weeks with a check; Shine only counts when it ran in the last 7 days", () => {
+  const base = { sort: [], moves: 0, filesInRules: 0, standards: { issues: 0, checked: 10 }, date: "2026-10-30" };
+  assert.equal(scores({ ...base, shine: null, past: [] }).sustain, 25);
+  assert.equal(scores({ ...base, shine: null, past: [{ date: "2026-10-22" }, { date: "2026-10-15" }, { date: "2026-10-08" }] }).sustain, 100);
+  assert.equal(scores({ ...base, shine: { date: "2026-10-20", results: [{ errors: 0 }] }, past: [] }).shine, null);
+  assert.equal(scores({ ...base, shine: { date: "2026-10-29", results: [{ errors: 4 }] }, past: [] }).shine, 80);
+});
+
+test("S-14 the brief reminds the owner once the last 5S check is more than 7 days old", () => {
+  const { root, syno } = fixtureH();
+  syno("init", "--name", "Demo", "--confirm");
+  assert.equal(fivesHook("SessionStart", {}, { cwd: root, now: "2026-10-30T10:00:00" }), null, "never run: no reminder");
+  syno("5s", "--confirm");
+  assert.equal(fivesHook("SessionStart", {}, { cwd: root, now: "2026-11-06T10:00:00" }), null);
+  assert.deepEqual(fivesHook("SessionStart", {}, { cwd: root, now: "2026-11-08T10:00:00" }).lines, ["5S: the last check was 9 days ago. Run /syno:5s to keep the project tidy."]);
+});

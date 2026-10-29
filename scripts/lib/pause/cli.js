@@ -102,7 +102,7 @@ async function pause(ctx) {
   const s = { title: clean(raw.title), goal: clean(raw.goal), note: clean(raw.note), done: list(raw.done), inProgress: list(raw.inProgress), next: list(raw.next), decisions: list(raw.decisions), files: list(raw.files) };
   const now = nowOf(ctx);
   const { gate } = await import("../sigma/gate.js");
-  const g = await gate(ctx.repo, loadConfig(ctx.repo), "release");
+  const g = await gate(ctx.repo, loadConfig(ctx.repo) ?? {}, "release");
   const facts = { at: localTime(now), code: codeState(ctx.repo), tests: lastTestRun(ctx.repo), gate: g.text, jobs: governorJobs(ctx.repo) };
   const name = `${stamp(now)}-${slugify(s.title, 32)}.md`;
   const plan = new WritePlan(ctx.repo).write(`${DIR}/${name}`, sessionMarkdown(s, facts, name));
