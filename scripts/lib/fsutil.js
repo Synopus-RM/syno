@@ -3,9 +3,9 @@
 // atomic (temp file, then rename) and must stay inside the project root, never
 // through a link that leads out of it. The shared CLI errors live here too, so
 // every module refuses the same way.
-import { existsSync, mkdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, rmdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 
 export const EXIT = { OK: 0, FAILED: 1, USAGE: 2, REFUSED: 3 };
 
@@ -62,6 +62,20 @@ export function atomicWrite(file, content) {
   renameSync(tmp, file);
 }
 
+export const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
+
+function moveToTrash(root, full, { dir, dest }) {
+  if (dir) {
+    if (existsSync(full) && !readdirSync(full).length) rmdirSync(full);
+    return;
+  }
+  const bytes = readFileSync(full);
+  const target = insideRoot(root, dest);
+  atomicWrite(target, bytes);
+  if (sha256(readFileSync(target)) !== sha256(bytes)) throw refusal(`Refused: the trash copy of ${dest} didn't match, so the original was kept.`);
+  rmSync(full);
+}
+
 /**
  * The owner-decides rule in code. A plan collects every file a command would
  * create, update or remove; `describe()` is the preview; `apply()` writes only
@@ -76,8 +90,8 @@ export class WritePlan {
 
   write(path, content) {
     const full = insideRoot(this.root, path);
-    const current = readText(full);
-    if (current === content) return this;
+    const current = Buffer.isBuffer(content) ? (existsSync(full) ? readFileSync(full) : null) : readText(full);
+    if (current !== null && (Buffer.isBuffer(content) ? content.equals(current) : current === content)) return this;
     this.ops.push({ op: current === null ? "create" : "update", path: toPosix(path), content });
     return this;
   }
@@ -93,6 +107,29 @@ export class WritePlan {
     return this;
   }
 
+  /**
+   * Moves a project file into .syno/trash/<id>/ (5S, PRD S-14 rule 7). The copy
+   * is checked byte for byte before the original goes; nothing is hard-deleted.
+   * An empty folder (`dir: true`) is removed and recorded so restore can make it again.
+   */
+  trash(path, id, { dir = false } = {}) {
+    const rel = toPosix(path);
+    if (rel === ".git" || rel.startsWith(".git/") || rel.startsWith(".syno/trash/")) throw refusal(`Refused: 5S never touches ${rel}.`);
+    if (!/^\d{8}-\d{6}(-\d+)?$/.test(id)) throw usage(`"${id}" isn't a trash id.`);
+    const full = insideRoot(this.root, path);
+    if (!existsSync(full)) return this;
+    if (dir && (!statSync(full).isDirectory() || readdirSync(full).length)) throw refusal(`Refused: ${rel} isn't an empty folder.`);
+    this.ops.push({ op: "trash", path: rel, dest: dir ? null : `.syno/trash/${id}/files/${rel}`, dir });
+    return this;
+  }
+
+  /** Makes an empty folder again (5S restore). */
+  folder(path) {
+    const full = insideRoot(this.root, path);
+    if (!existsSync(full)) this.ops.push({ op: "folder", path: toPosix(path) });
+    return this;
+  }
+
   get empty() {
     return this.ops.length === 0;
   }
@@ -104,9 +141,11 @@ export class WritePlan {
 
   apply({ confirm }) {
     if (!confirm || this.empty) return { applied: false, ops: this.ops.map(({ op, path }) => ({ op, path })) };
-    for (const { op, path, content } of this.ops) {
+    for (const { op, path, content, ...rest } of this.ops) {
       const full = insideRoot(this.root, path);
       if (op === "remove") rmSync(full, { force: true });
+      else if (op === "trash") moveToTrash(this.root, full, rest);
+      else if (op === "folder") mkdirSync(full, { recursive: true });
       else atomicWrite(full, content);
     }
     return { applied: true, ops: this.ops.map(({ op, path }) => ({ op, path })) };
