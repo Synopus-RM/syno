@@ -10,6 +10,8 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const SCRIPTS = join(ROOT, "scripts");
+// Code Syno ships: its own scripts, the MCP server, and the tools inside skills that Claude runs.
+const CODE_DIRS = ["scripts", "mcp", "skills"].map((d) => join(ROOT, d));
 
 // Ported code keeps its own shape; each entry says why it is allowed.
 export const NETWORK_ALLOWED = { "scripts/lib/pulse/net.js": "Syno Pulse, the only function that goes online" };
@@ -18,8 +20,9 @@ export const PROCESS_ALLOWED = {
   "scripts/lib/run.js": "project commands the owner approved",
   "scripts/lib/pulse/sender.js": "Syno Pulse sends in a detached process, so hooks stay under 100 ms",
   "scripts/governor/": "ported Workload Governor queue runner (gov run)",
+  "skills/progress/scripts/collect.mjs": "Syno Progress reads git (read-only) to collect facts",
 };
-export const SIZE_EXEMPT = { "scripts/governor/": "ported Workload Governor 0.2.0, kept as it was" };
+export const SIZE_EXEMPT = { "scripts/governor/": "ported Workload Governor 0.2.0, kept as it was", "skills/": "tools ported with their skills, kept as they were" };
 const PURE_DIRS = ["scripts/lib/report/", "scripts/lib/chronicle/render/"];
 
 function codeFiles(dir) {
@@ -32,7 +35,7 @@ function codeFiles(dir) {
   return out;
 }
 
-const files = () => codeFiles(SCRIPTS).map((f) => ({ rel: relative(ROOT, f).split("\\").join("/"), text: readFileSync(f, "utf8") }));
+const files = () => CODE_DIRS.flatMap((d) => { try { return codeFiles(d); } catch { return []; } }).map((f) => ({ rel: relative(ROOT, f).split("\\").join("/"), text: readFileSync(f, "utf8") }));
 const allowed = (list, rel) => Object.keys(list).some((k) => (k.endsWith("/") ? rel.startsWith(k) : rel === k));
 // Strip comments so a word in a comment doesn't trip a guard.
 const code = (text) => text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'`\\])\/\/.*$/gm, "$1");
