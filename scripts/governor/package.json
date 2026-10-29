@@ -1,0 +1,5 @@
+{
+  "private": true,
+  "type": "commonjs",
+  "description": "Syno Governor, ported from Workload Governor 0.2.0 (CommonJS, kept as it was)."
+}
