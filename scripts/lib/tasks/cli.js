@@ -50,20 +50,10 @@ export function synoWarnings(breakdown) {
   return out;
 }
 
-/** The done gate (PRD §4.3). Syno Sigma adds tests, audit and security; acceptance is checked here. */
+/** The done gate (PRD §4.3) is Syno Sigma's: acceptance, tests and test guides (AC-TE.1), audit and security. */
 async function doneGate(root, task) {
-  const open = acceptanceOf(task).filter((a) => !a.done).map((a) => `Acceptance not met yet: ${a.text}`);
-  // A test guide for this task with a step that didn't match keeps it open until a new guide passes (AC-TE.1).
-  const { latestTestFor } = await import("../testguide/cli.js");
-  const guide = latestTestFor(root, task.id);
-  if (guide?.totals.fail) open.push(`Test guide "${guide.title}" had ${guide.totals.fail} step(s) that didn't match. Fix them and test again.`);
-  let sigma = { status: "not-set-up", reasons: [] };
-  try {
-    const { gate } = await import("../sigma/gate.js");
-    sigma = await gate(root, readJson(join(root, ".syno/config.json"), {}), "done", { task });
-  } catch {}
-  const reasons = [...open, ...(sigma.status === "fail" ? sigma.reasons : [])];
-  return { status: reasons.length ? "fail" : "pass", reasons };
+  const { gate } = await import("../sigma/gate.js");
+  return gate(root, readJson(join(root, ".syno/config.json"), {}), "done", { task });
 }
 
 async function save(ctx, breakdown, intro, events = []) {
@@ -85,7 +75,8 @@ async function setStatus(ctx, breakdown, [id, raw]) {
   if (status === "in_progress" && !acceptanceOf(task).length) throw refusal(`${id} has no acceptance criterion. Add at least one (how will we know it's done?) before it starts.`);
   if (status === "done") {
     const gate = await doneGate(ctx.repo, task);
-    if (gate.status === "fail") return { code: 1, text: [`${id} stays In progress. The done gate didn't pass:`, ...gate.reasons.map((r) => `  - ${r}`)].join("\n"), data: { gate } };
+    if (gate.status === "fail") return { code: 1, text: [`${id} stays In progress. The done gate didn't pass:`, ...gate.reasons.map((r) => `  - ${r}`), "Fix these first, or record an override with a reason (/syno:sigma)."].join("\n"), data: { gate } };
+    if (gate.overridden.length) task.overrides = [...new Set([...(task.overrides ?? []), ...gate.overridden])];
   }
   const reopened = task.status === "done" && status !== "done";
   Object.assign(task, { status, ...(reopened ? { reopenedCount: (task.reopenedCount ?? 0) + 1, firstPass: false } : {}), ...(status === "done" ? { completed: today(nowOf(ctx)), firstPass: task.firstPass ?? (task.reopenedCount ?? 0) === 0 } : {}) });

@@ -21,6 +21,21 @@ When a criterion fails its first check, record it: `node "${CLAUDE_PLUGIN_ROOT}/
 2. Ask with AskUserQuestion: "Save this measurement and its report?" Options: "Save it (Recommended)" and "Not now". Only on yes, run it again with `--confirm`.
 3. Point the owner to `.syno/reports/sigma/latest.html`.
 
+## Gates (PRD §4.3)
+
+- **Done gate** (a task being marked done, by Tasks or Parallel): its acceptance criteria are met, the last test run passed, its latest test guide matched, no Critical audit finding and no Critical or High security finding is open.
+- **Release gate** (a Chronicle release being cut): the same project-wide, plus no Critical compliance gap and a compliance check newer than the last PRD change.
+- Check one with `syno sigma gate --task <id>` or `syno sigma gate --release`. Each failing item ends with its id in square brackets.
+
+## Override
+
+Only the owner overrides a gate, and only for a reason.
+
+1. Show each failing item in one line, then ask with AskUserQuestion: "Fix these first, or override?" Options: "Fix first (Recommended)" and "Override with a reason".
+2. On override, ask which items (multiSelect, by their ids) and for the reason, at least 10 characters, in the owner's own words. Never write the reason for them.
+3. Run `syno sigma override --gate <done|release> [--task <id>] --items <ids> --reason "<their words>"` to preview, then again with `--confirm`.
+4. A done-gate override holds for that task. A release override is used by the next release that passes because of it, and listed in that release's record. Every override shows in the Sigma report and goes to Pulse.
+
 ## Control
 
 The report's verdict is Green at or above the target (default 4σ) with every gate passing, Amber below the target, and Red when a gate fails. Never round a number up or leave out a problem to make the verdict look better.

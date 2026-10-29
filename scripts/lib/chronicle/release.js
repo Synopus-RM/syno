@@ -15,14 +15,10 @@ import { takeSnapshot } from "./snapshot.js";
 
 const REASON = { major: "a change may break things, so the first number goes up", minor: "something new was added, so the middle number goes up", patch: "only fixes and small changes, so the last number goes up" };
 
-/** The release gate (PRD §4.3). Syno Sigma provides it; until then every release passes with a note. */
+/** The release gate (PRD §4.3) is Syno Sigma's. */
 export async function releaseGate(root, config) {
-  try {
-    const { gate } = await import("../sigma/gate.js");
-    return await gate(root, config, "release");
-  } catch {
-    return { status: "not-set-up", reasons: [], text: "Quality gates aren't set up yet (Syno Sigma), so nothing blocks this release." };
-  }
+  const { gate } = await import("../sigma/gate.js");
+  return gate(root, config, "release");
 }
 
 function proposal(ctx) {
@@ -76,8 +72,8 @@ export async function cut(ctx) {
   if (p.releases.some((r) => r.version === version)) throw refusal(`Version ${version} already exists.`);
   if (!p.pending.length && ctx.flags.empty !== true) throw refusal("Nothing to release: no changes are waiting. Add --empty to cut a release with no changes.");
   const gate = await releaseGate(ctx.repo, config);
-  const overrides = typeof ctx.flags.override === "string" ? ctx.flags.override.split(",") : [];
-  if (gate.status === "fail" && !overrides.length) return { code: 1, text: ["The release gate didn't pass:", ...gate.reasons.map((r) => `  - ${r}`), "Fix these first, or record an override with a reason (/syno:sigma)."].join("\n"), data: { gate } };
+  const overrides = gate.overridden;
+  if (gate.status === "fail") return { code: 1, text: ["The release gate didn't pass:", ...gate.reasons.map((r) => `  - ${r}`), "Fix these first, or record an override with a reason (/syno:sigma)."].join("\n"), data: { gate } };
   const now = nowOf(ctx);
   const plan = new WritePlan(ctx.repo);
   const head = isRepo(ctx.repo) ? tryGit(["rev-parse", "HEAD"], { cwd: ctx.repo }) : null;

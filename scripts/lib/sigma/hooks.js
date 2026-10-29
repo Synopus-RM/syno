@@ -1,7 +1,8 @@
 // Syno Sigma's part of the Syno hooks (PRD S-13 rule 2). After a Bash call in
 // a Syno project, a test or build run is logged in .syno/local/runs.jsonl
-// (git-ignored), whether or not Pulse is on. Only the kind, the result and the
-// counts are kept: never the command or its output.
+// (git-ignored), whether or not Pulse is on. Only the kind, the result, the
+// counts and up to five failing test names are kept: never the command or its
+// output. The names stay on this machine; Pulse never gets them.
 import { appendFileSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { detect } from "../pulse/detect.js";
@@ -18,11 +19,21 @@ export function projectRoot(start) {
   return null;
 }
 
+// "not ok 3 - name" (node:test, TAP), "✗ name" / "× name" / "✕ name" (vitest, jest, mocha), "FAILED a.py::name" (pytest).
+const FAILING = [/^\s*not ok \d+ - (.+)$/gm, /^\s*[✗×✕]\s+(.+?)(?:\s+\d+ ?m?s)?$/gm, /^FAILED (\S+)/gm];
+
+/** Up to five failing test names from a run's output, each at most 120 characters. */
+export function failingNames(output) {
+  const names = new Set();
+  for (const re of FAILING) for (const m of output.matchAll(re)) names.add(m[1].trim().slice(0, 120));
+  return [...names].slice(0, 5);
+}
+
 /** The run lines one Bash call adds (empty when it was neither a test nor a build). */
 export function runLines(command, output, at) {
   return detect(command, output)
     .filter((f) => f.type === "test_run" || f.type === "build")
-    .map((f) => (f.type === "test_run" ? { at, kind: "test", ok: f.data.ok, passed: f.data.passed, failed: f.data.failed } : { at, kind: "build", ok: f.data.ok }));
+    .map((f) => (f.type === "test_run" ? { at, kind: "test", ok: f.data.ok, passed: f.data.passed, failed: f.data.failed, ...(f.data.failed ? { failing: failingNames(output) } : {}) } : { at, kind: "build", ok: f.data.ok }));
 }
 
 export function handle(event, input, env) {

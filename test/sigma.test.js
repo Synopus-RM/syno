@@ -61,7 +61,7 @@ test("AC-SG.3 two runs on the same records give the same numbers, and measure sa
 
 test("S-13 test and build runs are logged without the command or its output, and count as checks", async () => {
   const { root } = fixtureF();
-  assert.deepEqual(runLines("npm test", "Tests  3 failed | 40 passed", "2026-10-29T09:00:00Z"), [{ at: "2026-10-29T09:00:00Z", kind: "test", ok: false, passed: 40, failed: 3 }]);
+  assert.deepEqual(runLines("npm test", "Tests  3 failed | 40 passed", "2026-10-29T09:00:00Z"), [{ at: "2026-10-29T09:00:00Z", kind: "test", ok: false, passed: 40, failed: 3, failing: [] }]);
   assert.deepEqual(runLines("ls -la", "total 3", "x"), []);
   handle("PostToolUse", { tool_name: "Bash", tool_input: { command: "SECRET=abc npm test" }, tool_response: { stdout: "# pass 12\n# fail 1" } }, { cwd: join(root, ".syno/tasks"), now: "2026-10-29T09:00:00Z" });
   const log = readFileSync(join(root, ".syno/local/runs.jsonl"), "utf8");
