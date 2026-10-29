@@ -18,7 +18,8 @@ function runTests() {
     .sort()
     .map((f) => join(TEST_DIR, f));
   const started = Date.now();
-  const res = spawnSync(process.execPath, ["--test", "--test-reporter=tap", ...testFiles], { cwd: ROOT, encoding: "utf8" });
+  const env = { ...process.env, ...(perf ? { SYNO_PERF: "1" } : {}) };
+  const res = spawnSync(process.execPath, ["--test", "--test-reporter=tap", ...testFiles], { cwd: ROOT, encoding: "utf8", env });
   const count = (key) => Number((res.stdout.match(new RegExp(`^# ${key} (\\d+)`, "m")) ?? [])[1] ?? 0);
   const failed = res.stdout
     .split("\n")
