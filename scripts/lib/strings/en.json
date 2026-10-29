@@ -1,0 +1,43 @@
+{
+  "months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+  "report": {
+    "summary": "Summary",
+    "actions": "What you need to do",
+    "nothing": "Nothing right now.",
+    "detail": "Detail",
+    "glossary": "Glossary",
+    "generated": "Made by Syno {version} on {date}.",
+    "who": "Who",
+    "by": "By"
+  },
+  "verdict": {
+    "green": "Green",
+    "amber": "Amber",
+    "red": "Red"
+  },
+  "functions": {
+    "chronicle": "Syno Chronicle",
+    "pulse": "Syno Pulse",
+    "progress": "Syno Progress",
+    "tasks": "Syno Tasks",
+    "audit": "Syno Audit",
+    "devices": "Syno Devices",
+    "test": "Syno Test",
+    "parallel": "Syno Parallel",
+    "plan": "Syno Plan",
+    "prompt": "Syno Prompt",
+    "governor": "Syno Governor",
+    "pause": "Syno Pause",
+    "sigma": "Syno Sigma",
+    "fives": "Syno 5S",
+    "compliance": "Syno Compliance",
+    "security": "Syno Security",
+    "status": "Syno Status"
+  },
+  "jargon": [
+    "API", "branch", "CI", "CLI", "commit", "CORS", "critical path", "DLT", "DPDP", "DPMO", "endpoint",
+    "FPY", "first-pass yield", "GDPR", "lint", "linter", "merge", "OTA", "OWASP", "parity", "PR",
+    "pull request", "refactor", "repo", "repository", "schema", "SDK", "semver", "sigma", "staging",
+    "tag", "token", "XSS"
+  ]
+}

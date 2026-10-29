@@ -1,0 +1,141 @@
+/* Syno reports in Synopus Sky Glass (PRD §5.3). Colours, radius and type come
+   from Synopus's own design system (sky-glass-ui tokens); everything is here,
+   so a report works offline and loads nothing. Light and dark follow the
+   reader's system; print is always light. */
+:root {
+  color-scheme: light dark;
+  --page: #f0f9ff;
+  --glass: rgb(255 255 255 / 0.7);
+  --glass-border: rgb(186 230 253 / 0.6);
+  --surface: #ffffff;
+  --border: #e2e8f0;
+  --fg: #0f172a;
+  --muted: #475569;
+  --primary: #0369a1;
+  --primary-soft: rgb(3 105 161 / 0.1);
+  --good: #065f46;
+  --good-soft: rgb(4 120 87 / 0.12);
+  --warn: #92400e;
+  --warn-soft: rgb(180 83 9 / 0.12);
+  --bad: #be123c;
+  --bad-soft: rgb(225 29 72 / 0.12);
+  --track: rgb(71 85 105 / 0.1);
+  --shadow: 0 1px 2px rgb(15 23 42 / 0.05), 0 8px 24px rgb(15 23 42 / 0.06);
+  --radius: 16px;
+  --radius-control: 10px;
+  --font: "Geist Sans", "Noto Sans Tamil", "Noto Sans Devanagari", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page: #000000;
+    --glass: rgb(255 255 255 / 0.05);
+    --glass-border: rgb(255 255 255 / 0.1);
+    --surface: #111114;
+    --border: #2a2a31;
+    --fg: #ffffff;
+    --muted: #a1a1aa;
+    --primary: #38bdf8;
+    --primary-soft: rgb(56 189 248 / 0.12);
+    --good: #34d399;
+    --good-soft: rgb(52 211 153 / 0.14);
+    --warn: #fbbf24;
+    --warn-soft: rgb(251 191 36 / 0.14);
+    --bad: #fb7185;
+    --bad-soft: rgb(251 113 133 / 0.14);
+    --track: rgb(161 161 170 / 0.14);
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.35);
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font: 16px/1.6 var(--font);
+  color: var(--fg);
+  background:
+    radial-gradient(60rem 30rem at 10% -10%, var(--primary-soft), transparent 70%),
+    radial-gradient(40rem 24rem at 100% 0%, var(--primary-soft), transparent 70%),
+    var(--page);
+  min-height: 100vh;
+}
+main { max-width: 960px; margin: 0 auto; padding: 32px 16px 48px; }
+.eyebrow { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--primary); }
+h1 { margin: 4px 0 4px; font-size: 32px; line-height: 1.2; letter-spacing: -0.01em; }
+h2 { margin: 0 0 12px; font-size: 20px; line-height: 1.3; }
+.meta { margin: 0 0 24px; color: var(--muted); font-size: 14px; }
+.card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin: 0 0 16px;
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+.verdict { display: flex; gap: 16px; align-items: center; padding: 20px 24px; }
+.verdict p { margin: 0; font-size: 20px; font-weight: 600; line-height: 1.35; }
+.pill {
+  flex: none;
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  border: 1px solid currentColor;
+}
+.level-green .pill { color: var(--good); background: var(--good-soft); }
+.level-amber .pill { color: var(--warn); background: var(--warn-soft); }
+.level-red .pill { color: var(--bad); background: var(--bad-soft); }
+.level-green { border-left: 6px solid var(--good); }
+.level-amber { border-left: 6px solid var(--warn); }
+.level-red { border-left: 6px solid var(--bad); }
+ul, ol { margin: 0; padding-left: 22px; }
+li + li { margin-top: 6px; }
+.actions li strong { font-weight: 600; }
+.actions .when { color: var(--muted); font-size: 14px; }
+.nothing { margin: 0; color: var(--muted); }
+.intro { margin: 0 0 12px; color: var(--muted); }
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
+th { font-weight: 600; color: var(--muted); background: var(--track); }
+tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.bars { display: grid; gap: 12px; }
+.bar-row { display: grid; grid-template-columns: minmax(120px, 30%) 1fr auto; gap: 12px; align-items: center; font-size: 14px; }
+.bar-track { display: block; height: 12px; border-radius: 999px; background: var(--track); overflow: hidden; }
+.bar-fill { display: block; height: 100%; border-radius: 999px; background: var(--primary); }
+.bar-fill.good { background: var(--good); }
+.bar-fill.warn { background: var(--warn); }
+.bar-fill.bad { background: var(--bad); }
+.bar-value { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 3.5em; text-align: right; }
+.bar-note { grid-column: 1 / -1; margin-top: -8px; color: var(--muted); font-size: 13px; }
+dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; }
+dt { font-weight: 600; }
+dd { margin: 0; color: var(--muted); }
+.note { margin: 12px 0 0; font-size: 14px; color: var(--muted); }
+footer { margin-top: 24px; color: var(--muted); font-size: 13px; text-align: center; }
+a { color: var(--primary); }
+@media (max-width: 600px) {
+  h1 { font-size: 26px; }
+  .verdict { flex-direction: column; align-items: flex-start; }
+  .bar-row { grid-template-columns: 1fr auto; }
+  .bar-track { grid-column: 1 / -1; grid-row: 2; }
+  dl { grid-template-columns: 1fr; }
+  dd { margin-bottom: 8px; }
+}
+h3 { margin: 0 0 12px; font-size: 18px; line-height: 1.3; }
+.detail-title { margin: 28px 0 12px; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+@media print {
+  :root {
+    color-scheme: light;
+    --page: #ffffff; --glass: #ffffff; --glass-border: #e2e8f0; --surface: #ffffff; --border: #e2e8f0;
+    --fg: #0f172a; --muted: #475569; --primary: #0369a1; --primary-soft: rgb(3 105 161 / 0.1);
+    --good: #065f46; --good-soft: rgb(4 120 87 / 0.12); --warn: #92400e; --warn-soft: rgb(180 83 9 / 0.12);
+    --bad: #be123c; --bad-soft: rgb(225 29 72 / 0.12); --track: rgb(71 85 105 / 0.1);
+  }
+  body { background: #ffffff; }
+  .card { box-shadow: none; backdrop-filter: none; break-inside: avoid; }
+  @page { size: A4; margin: 16mm; }
+}
