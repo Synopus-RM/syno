@@ -1,0 +1,39 @@
+# Syno record check for pull requests (PRD CH-13). Copy this file to
+# .github/workflows/syno.yml in your project. Syno never adds it for you.
+#
+# It fails the pull request when:
+#   - a record in .syno/ is malformed (syno validate)
+#   - CHANGELOG.md or docs/syno/ weren't re-rendered after a record changed (syno render --check)
+#   - the release gate would block a release (syno sigma gate --release --ci)
+# It reads committed files only, needs no secrets, and writes nothing.
+name: Syno record check
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  syno:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Chronicle reads tags and history
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Get Syno (pinned to a release)
+        run: git clone --depth 1 --branch v0.1.0 https://github.com/rishimurugan-synopus/syno.git "$RUNNER_TEMP/syno"
+
+      - name: Records are valid
+        run: node "$RUNNER_TEMP/syno/scripts/syno.js" validate
+
+      - name: Docs are up to date
+        run: node "$RUNNER_TEMP/syno/scripts/syno.js" render --check
+
+      - name: Release gate
+        run: node "$RUNNER_TEMP/syno/scripts/syno.js" sigma gate --release --ci

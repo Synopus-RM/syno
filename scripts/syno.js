@@ -11,7 +11,7 @@ import { EXIT } from "./lib/fsutil.js";
 const here = (rel) => fileURLToPath(new URL(rel, import.meta.url));
 
 // One module per function; each exports `run(ctx)` → { code, text, data }.
-const FUNCTIONS = {
+export const FUNCTIONS = {
   chronicle: "./lib/chronicle/cli.js",
   pulse: "./lib/pulse/cli.js",
   progress: "./lib/progress/cli.js",
@@ -30,7 +30,7 @@ const FUNCTIONS = {
   migrate: "./lib/migrate/cli.js",
 };
 const ALIASES = { "5s": "fives" };
-const CHRONICLE = new Set(["init", "ignore", "adopt", "idea", "change", "release", "publish", "notes", "snapshot", "structure", "diff", "timeline", "render", "validate", "sync"]);
+export const CHRONICLE = new Set(["init", "ignore", "adopt", "idea", "change", "release", "publish", "notes", "snapshot", "structure", "diff", "timeline", "render", "validate", "sync"]);
 const BOOLEAN = new Set(["json", "confirm", "dry-run", "all", "empty", "check", "ci", "history", "perf"]);
 
 /** Splits argv into positional words and --flags (`--key value`, `--key=value`, or a boolean). */
