@@ -516,7 +516,7 @@ A read-only audit of five categories (workflow bugs, workflow errors, UI/UX issu
 Keeps a web app's Windows, macOS, Linux, Android and iOS apps matched to its current code: sync modes chosen from the PRD, Tauri 2 and Capacitor 8 shells, version and parity checks, over-the-air updates, and GitHub Actions releases. DMAIC step: Improve.
 
 1. Port all four skills, renamed: `devices` (was app-sync), `devices-desktop` (desktop-shell), `devices-mobile` (mobile-shell) and `devices-release` (release-pipeline). Author Synopus, licence MIT.
-2. Keep the Python scripts and templates. Rename `app-sync.json` to `.syno/devices.json`, reading the old file once after a yes.
+2. Keep the Python scripts and templates, and keep the settings file's name, `app-sync.json`, at the project root *(changed during the build)*. Existing GitHub Actions workflows copy `app-sync/tools` and read `app-sync.json`, so renaming it would break releases that already work.
 3. Builds go through Syno Governor. Any push, tag push, store upload or workflow run needs its own yes.
 4. Status renders with the shared look: one row per platform with its version and In sync, Behind or Not set up.
 5. Send `devices.parity` to Pulse after each check or update.
@@ -705,7 +705,7 @@ Section 5.3 is the specification. `scripts/lib/report/` renders every report fro
 #### X-03 Migration from the standalone plugins and skills (Must)
 
 1. `/syno:migrate` finds the standalone installs: the synopus-insider, workload-governor and akmo-app-sync plugins, and the 7 skills (in `~/.claude/skills/` or synced from claude.ai).
-2. It moves Insider's settings and marker files after a yes, keeps the Governor's state folder in place, and moves `app-sync.json` after a yes.
+2. It moves Insider's settings and marker files after a yes, keeps the Governor's state folder in place, and leaves `app-sync.json` where it is, because Devices still reads it there.
 3. It prints the exact uninstall steps for the owner. Skills synced from claude.ai are removed in claude.ai's settings, so Syno lists them without touching them.
 4. Old installs are retired only after Syno's self-test passes on this machine.
 
@@ -793,7 +793,6 @@ Every flow follows the same rule: Syno shows a preview, the owner answers, and S
 .syno/
   config.json              committed   Syno-wide settings (below)
   pulse.json               committed   Pulse project marker
-  devices.json             committed   Devices settings (was app-sync.json)
   ideas/ changes/ releases/ snapshots/   committed   Chronicle records (PRD 0.1)
   tasks/breakdown.json     committed   Tasks breakdown
   sigma/<date>.json        committed   Sigma measurements
@@ -1079,7 +1078,7 @@ The self-test (`node test/selftest.js`) proves every acceptance criterion on fix
 | I: compliance | A PRD that collects phone numbers in India and sends OTPs | DPDP and DLT apply; stale after an edit (AC-CO.1, CO.2) |
 | J: security | A route with no permission check, a fake committed key, an attack test aimed at a public host | High finding, masked secret, refused host (AC-SE.1 to SE.3) |
 | K: reports | Every report type from fixture data | Structure, sentence length, reading grade, no network (AC-XR.1 to XR.3) |
-| L: migration | Old Insider, Governor and app-sync settings | Moves after a yes, idempotent (AC-XM.1, AC-GO.1) |
+| L: migration | Old Insider and Governor settings | Moves after a yes, idempotent (AC-XM.1, AC-GO.1) |
 
 **Cross-cutting checks:** idempotency of every write, hook fail-open and time budgets, the network-module and process-module guards, the local-host guard, Windows path handling, and `claude plugin validate ./syno`.
 
@@ -1130,6 +1129,7 @@ Defaults chosen during the brainstorms, all marked assumed.
 - 5S flags files over 5 MB and branches idle for 30 days, and reminds after 7 days. (assumed)
 - English only; free. (assumed)
 - Chronicle's state (render hashes and the last synced tag) lives in `.syno/local/state.json`, git-ignored, because it changes on every render and would make two branches conflict in `.syno/` (AC-CH-04.2). Hand edits are spotted on the machine that rendered the page. (decided during the build, 2026-10-30)
+- Syno Devices keeps the settings file name `app-sync.json` and its scripts' folder layout, instead of moving them to `.syno/devices.json`. Existing release workflows copy `app-sync/tools` and read `app-sync.json`; renaming would break them for no gain to the reader. (decided during the build, 2026-10-30)
 - PRD 0.1's Chronicle defaults stay: 0.x breaking changes propose a minor bump, a release embeds and removes its pending changes, snapshot depth 3, the last 50 tags, a 60% rename threshold, and CLI writes need `--confirm`. (assumed, from PRD 0.1)
 
 ## 19. Open questions and risks
