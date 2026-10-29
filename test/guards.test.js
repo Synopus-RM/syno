@@ -14,7 +14,10 @@ const SCRIPTS = join(ROOT, "scripts");
 const CODE_DIRS = ["scripts", "mcp", "skills"].map((d) => join(ROOT, d));
 
 // Ported code keeps its own shape; each entry says why it is allowed.
-export const NETWORK_ALLOWED = { "scripts/lib/pulse/net.js": "Syno Pulse, the only function that goes online" };
+export const NETWORK_ALLOWED = {
+  "scripts/lib/pulse/net.js": "Syno Pulse, the only function that goes online",
+  "skills/security/scripts/attack.mjs": "Syno Security's attack tests: this machine only, every URL checked before the first request (PRD S-16 rule 6)",
+};
 export const PROCESS_ALLOWED = {
   "scripts/lib/git.js": "read-only git from an allowlist",
   "scripts/lib/run.js": "project commands the owner approved",

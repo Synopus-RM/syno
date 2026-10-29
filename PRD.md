@@ -952,7 +952,7 @@ The Chronicle entities (Idea, Change, Release, Publish, Snapshot) and the Chroni
 **Enforced in code**
 
 - `git.js` runs only allowlisted git subcommands; `run.js` runs only commands the owner approved in this session, through `gov run`.
-- `pulse/net.js` is the only module that imports a network module; a self-test checks every file.
+- `pulse/net.js` is the only module that goes online. The one other module that makes requests is Security's attack runner, `skills/security/scripts/attack.mjs`, which reaches this machine only and checks every URL before the first request *(decided during the build)*. A self-test checks every file.
 - The attack-test runner checks every URL's host against the local list before any request.
 - Writes are atomic (temp file, then rename) and only follow `--confirm`.
 - Redaction runs on every Pulse event and every resume file.
@@ -1129,6 +1129,7 @@ Defaults chosen during the brainstorms, all marked assumed.
 - 5S flags files over 5 MB and branches idle for 30 days, and reminds after 7 days. (assumed)
 - English only; free. (assumed)
 - Chronicle's state (render hashes and the last synced tag) lives in `.syno/local/state.json`, git-ignored, because it changes on every render and would make two branches conflict in `.syno/` (AC-CH-04.2). Hand edits are spotted on the machine that rendered the page. (decided during the build, 2026-10-30)
+- Syno Security's attack tests run from one stand-alone runner that may make requests, to this machine only (S-16 rule 6). The self-test's network guard names it as the single exception besides Pulse. (decided during the build, 2026-10-30)
 - Syno Devices keeps the settings file name `app-sync.json` and its scripts' folder layout, instead of moving them to `.syno/devices.json`. Existing release workflows copy `app-sync/tools` and read `app-sync.json`; renaming would break them for no gain to the reader. (decided during the build, 2026-10-30)
 - PRD 0.1's Chronicle defaults stay: 0.x breaking changes propose a minor bump, a release embeds and removes its pending changes, snapshot depth 3, the last 50 tags, a 60% rename threshold, and CLI writes need `--confirm`. (assumed, from PRD 0.1)
 
