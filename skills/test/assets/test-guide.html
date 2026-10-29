@@ -1,0 +1,341 @@
+<title>__GUIDE_TITLE__</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=Atkinson+Hyperlegible+Mono:wght@500&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap">
+<style>
+/* Layout: one calm reading column; each step is a card with a big Pass / Fail pair, a sticky progress strip on top. */
+:root {
+  --bg: #f0f9ff; --surface: #ffffff; --ink: #0f172a; --muted: #475569; --line: #e2e8f0;
+  --accent: #0369a1; --accent-soft: #e0f2fe;
+  --pass: #047857; --pass-soft: #d1fae5; --fail: #be123c; --fail-soft: #ffe4e6; --warn: #92400e; --warn-soft: #fef3c7;
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "Atkinson Hyperlegible Mono", ui-monospace, "Cascadia Mono", monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #000000; --surface: #111114; --ink: #ffffff; --muted: #a1a1aa; --line: #2a2a31;
+  --accent: #38bdf8; --accent-soft: #082f49;
+  --pass: #34d399; --pass-soft: #064e3b; --fail: #fb7185; --fail-soft: #4c0519; --warn: #fbbf24; --warn-soft: #451a03;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #000000; --surface: #111114; --ink: #ffffff; --muted: #a1a1aa; --line: #2a2a31;
+  --accent: #38bdf8; --accent-soft: #082f49;
+  --pass: #34d399; --pass-soft: #064e3b; --fail: #fb7185; --fail-soft: #4c0519; --warn: #fbbf24; --warn-soft: #451a03;
+  color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font: 17px/1.55 var(--f-body); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+.wrap { max-width: 44rem; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 4rem; display: grid; gap: 1.75rem; }
+h1, h2, h3 { font-family: var(--f-display); line-height: 1.2; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(1.7rem, 5vw, 2.3rem); }
+h2 { font-size: 1.35rem; }
+p { margin: 0; }
+strong { font-weight: 700; }
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+.bar .in { max-width: 44rem; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: .6rem; display: flex; align-items: center; gap: .9rem; flex-wrap: wrap; }
+.track { flex: 1 1 10rem; height: .55rem; border-radius: 99px; background: var(--line); overflow: hidden; display: flex; }
+.track i { display: block; height: 100%; transition: width .3s; }
+.track .p { background: var(--pass); } .track .f { background: var(--fail); }
+.count { font-variant-numeric: tabular-nums; color: var(--muted); font-size: .95rem; }
+/* Syno: the verdict comes first. */
+.verdict { flex: none; font-weight: 700; font-size: .85rem; padding: .15rem .7rem; border-radius: 99px; border: 1px solid currentColor; color: var(--warn); background: var(--warn-soft); }
+.verdict.green { color: var(--pass); background: var(--pass-soft); } .verdict.red { color: var(--fail); background: var(--fail-soft); }
+header { display: grid; gap: .8rem; padding-top: 1.5rem; }
+.eyebrow { font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.lead { font-size: 1.1rem; }
+.why { color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+.chip { background: var(--accent-soft); color: var(--accent); border-radius: 99px; padding: .2rem .75rem; font-size: .9rem; font-weight: 600; }
+section { display: grid; gap: .9rem; }
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 1rem 1.1rem; display: grid; gap: .7rem; }
+.device { display: grid; gap: .15rem; }
+.device b { font-weight: 700; }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: .55rem; }
+.checks label { display: flex; gap: .7rem; align-items: flex-start; cursor: pointer; }
+.checks input { width: 1.3rem; height: 1.3rem; margin-top: .15rem; flex: none; accent-color: var(--accent); }
+table { width: 100%; border-collapse: collapse; }
+.tablebox { overflow-x: auto; }
+td { padding: .5rem .4rem; border-top: 1px solid var(--line); vertical-align: middle; }
+tr:first-child td { border-top: 0; }
+td.v { font-family: var(--f-mono); font-size: .95rem; word-break: break-all; }
+.copy { font: 600 .85rem var(--f-body); border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 8px; padding: .3rem .6rem; cursor: pointer; }
+.scenario-head { display: grid; gap: .35rem; }
+.story { font-style: italic; color: var(--muted); border-left: 3px solid var(--accent); padding-left: .8rem; }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 1rem 1.1rem; display: grid; gap: .65rem; }
+.step.pass { border-color: var(--pass); }
+.step.fail { border-color: var(--fail); }
+.step-top { display: flex; gap: .8rem; align-items: baseline; }
+.num { font-family: var(--f-mono); color: var(--accent); font-weight: 500; flex: none; min-width: 2.2rem; }
+.do { font-size: 1.05rem; min-width: 0; }
+.see { background: var(--accent-soft); border-radius: 10px; padding: .6rem .8rem; }
+.see .lbl, .caution .lbl { font-size: .78rem; letter-spacing: .07em; text-transform: uppercase; font-weight: 700; display: block; }
+.see .lbl { color: var(--accent); }
+.caution { background: var(--warn-soft); color: var(--ink); border-radius: 10px; padding: .6rem .8rem; }
+.caution .lbl { color: var(--warn); }
+.answer { display: flex; gap: .6rem; flex-wrap: wrap; }
+.btn { font: 700 1rem var(--f-body); border-radius: 10px; padding: .75rem 1.1rem; min-height: 3rem; cursor: pointer; border: 2px solid transparent; flex: 1 1 11rem; }
+.btn:focus-visible, .copy:focus-visible, textarea:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.btn.ok { background: var(--pass-soft); color: var(--pass); border-color: var(--pass); }
+.btn.no { background: var(--fail-soft); color: var(--fail); border-color: var(--fail); }
+.btn.save { background: var(--fail); color: var(--surface); flex: 0 1 auto; }
+.btn.link { background: none; border: 0; color: var(--accent); text-decoration: underline; flex: 0 0 auto; min-height: 0; padding: .2rem 0; font-weight: 600; }
+.status { font-weight: 700; display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
+.status.pass { color: var(--pass); } .status.fail { color: var(--fail); }
+.failform { display: grid; gap: .6rem; }
+textarea { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: .6rem .7rem; min-height: 5.5rem; resize: vertical; }
+.hint { color: var(--muted); font-size: .9rem; }
+.note-shown { color: var(--ink); font-weight: 400; }
+.shot { max-width: 100%; border-radius: 8px; border: 1px solid var(--line); }
+.done { background: var(--pass-soft); border: 1px solid var(--pass); border-radius: 14px; padding: 1rem 1.1rem; display: grid; gap: .4rem; }
+.done.has-fail { background: var(--fail-soft); border-color: var(--fail); }
+.notice { background: var(--warn-soft); border-radius: 10px; padding: .6rem .8rem; font-size: .95rem; }
+@media (prefers-reduced-motion: reduce) { .track i { transition: none; } }
+</style>
+
+<div class="bar"><div class="in">
+  <span class="verdict" id="verdict" aria-live="polite">Amber: not tested yet</span>
+  <div class="track" aria-hidden="true"><i class="p" id="trackPass" style="width:0"></i><i class="f" id="trackFail" style="width:0"></i></div>
+  <span class="count" id="count" aria-live="polite">0 of 0 steps checked</span>
+</div></div>
+
+<main class="wrap" id="app"></main>
+
+<script type="application/json" id="guide-data">__GUIDE_JSON__</script>
+<script>
+(() => {
+  const guide = JSON.parse(document.getElementById("guide-data").textContent);
+  const app = document.getElementById("app");
+  const steps = guide.scenarios.flatMap((s, si) => s.steps.map((st, ti) => ({ ...st, num: `${si + 1}.${ti + 1}` })));
+  const results = {};          // stepId -> { status, note, shot }
+  const store = { db: null, assets: null, local: false };
+  const LOCAL_KEY = "test-guide-results";
+
+  const el = (tag, attrs = {}, kids = []) => {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === "class") n.className = v; else if (k === "text") n.textContent = v; else n.setAttribute(k, v);
+    }
+    for (const kid of [].concat(kids)) if (kid != null) n.append(kid);
+    return n;
+  };
+  // **Button name** becomes bold; everything else stays plain text.
+  const rich = (tag, text, cls) => {
+    const n = el(tag, cls ? { class: cls } : {});
+    String(text ?? "").split(/\*\*(.+?)\*\*/g).forEach((part, i) => n.append(i % 2 ? el("strong", { text: part }) : part));
+    return n;
+  };
+
+  function header() {
+    const meta = [`About ${guide.minutes} minutes`, `${steps.length} steps`];
+    if (guide.changeRef) meta.push(guide.changeRef);
+    const h = el("header", {}, [
+      el("span", { class: "eyebrow", text: [guide.project, "Test guide", guide.date].filter(Boolean).join(" · ") }),
+      el("h1", { text: guide.title }),
+      rich("p", guide.summary, "lead"),
+      guide.whyItMatters ? rich("p", guide.whyItMatters, "why") : null,
+      el("div", { class: "chips" }, meta.map((m) => el("span", { class: "chip", text: m }))),
+      el("p", { class: "notice", id: "storeNotice", hidden: "" }),
+    ]);
+    return h;
+  }
+
+  function devices() {
+    return el("section", {}, [
+      el("h2", { text: "Where to test" }),
+      el("div", { class: "box" }, guide.devices.map((d) => el("div", { class: "device" }, [el("b", { text: d.name }), d.how ? rich("span", d.how) : null]))),
+    ]);
+  }
+
+  function before() {
+    if (!guide.before?.length) return null;
+    let ticked = {};
+    try { ticked = JSON.parse(localStorage.getItem("test-guide-before") || "{}"); } catch { ticked = {}; }
+    const items = guide.before.map((b, i) => {
+      const id = `before-${i}`;
+      const box = el("input", { type: "checkbox", id });
+      box.checked = !!ticked[i];
+      box.addEventListener("change", () => {
+        ticked[i] = box.checked;
+        try { localStorage.setItem("test-guide-before", JSON.stringify(ticked)); } catch { /* not kept; fine */ }
+      });
+      return el("li", {}, el("label", { for: id }, [box, rich("span", b)]));
+    });
+    return el("section", {}, [el("h2", { text: "Before you start" }), el("div", { class: "box" }, el("ul", { class: "checks" }, items))]);
+  }
+
+  function sampleData() {
+    if (!guide.sampleData?.length) return null;
+    const rows = guide.sampleData.map((s) => {
+      const btn = el("button", { class: "copy", type: "button", text: "Copy" });
+      btn.addEventListener("click", () => {
+        navigator.clipboard.writeText(s.value).then(() => { btn.textContent = "Copied"; setTimeout(() => (btn.textContent = "Copy"), 1500); })
+          .catch(() => { const r = document.createRange(); r.selectNodeContents(btn.parentElement.previousElementSibling); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); });
+      });
+      return el("tr", {}, [el("td", { text: s.label }), el("td", { class: "v", text: s.value }), el("td", {}, btn)]);
+    });
+    return el("section", {}, [
+      el("h2", { text: "Sample details to type" }),
+      el("p", { class: "hint", text: "These are made up. Use them exactly, so you can recognise them later." }),
+      el("div", { class: "box tablebox" }, el("table", {}, el("tbody", {}, rows))),
+    ]);
+  }
+
+  function stepCard(st) {
+    const card = el("article", { class: "step", id: `step-${st.id}` }, [
+      el("div", { class: "step-top" }, [el("span", { class: "num", text: st.num }), rich("p", st.do, "do")]),
+      el("div", { class: "see" }, [el("span", { class: "lbl", text: "You should see" }), rich("span", st.see)]),
+      st.caution ? el("div", { class: "caution" }, [el("span", { class: "lbl", text: "Careful" }), rich("span", st.caution)]) : null,
+      el("div", { class: "slot" }),
+    ]);
+    paint(st.id, card);
+    return card;
+  }
+
+  function scenarios() {
+    return guide.scenarios.map((sc, si) => el("section", {}, [
+      el("div", { class: "scenario-head" }, [
+        el("span", { class: "eyebrow", text: sc.kind === "story" ? "Everyday story" : "What if…" }),
+        el("h2", { text: `${si + 1}. ${sc.title}` }),
+        rich("p", sc.story, "story"),
+      ]),
+      ...sc.steps.map((st) => stepCard(steps.find((x) => x.id === st.id))),
+    ]));
+  }
+
+  // The answer area of one step: two buttons, the "what did you see" form, or the saved answer.
+  function paint(id, card = document.getElementById(`step-${id}`)) {
+    if (!card) return;
+    const slot = card.querySelector(".slot");
+    if (card.dataset.editing === "1") return; // keep a half-typed note
+    const r = results[id];
+    card.classList.toggle("pass", r?.status === "pass");
+    card.classList.toggle("fail", r?.status === "fail");
+    slot.replaceChildren();
+    if (!r) {
+      const ok = el("button", { class: "btn ok", type: "button", text: "✓ It matches" });
+      const no = el("button", { class: "btn no", type: "button", text: "✗ Something is different" });
+      ok.addEventListener("click", () => save(id, { status: "pass", note: "", shot: "" }));
+      no.addEventListener("click", () => failForm(id, card));
+      slot.append(el("div", { class: "answer" }, [ok, no]));
+      return;
+    }
+    const again = el("button", { class: "btn link", type: "button", text: "Change answer" });
+    again.addEventListener("click", () => { delete results[id]; card.dataset.editing = ""; paint(id, card); });
+    const line = el("div", { class: `status ${r.status}` }, [el("span", { text: r.status === "pass" ? "✓ Matches" : "✗ Different" }), again]);
+    slot.append(line);
+    if (r.note) slot.append(el("p", { class: "note-shown", text: `What you saw: ${r.note}` }));
+    if (r.shot) slot.append(el("img", { class: "shot", src: `/_blob/${r.shot}`, alt: `Screenshot for step ${steps.find((s) => s.id === id)?.num}` }));
+  }
+
+  function failForm(id, card) {
+    card.dataset.editing = "1";
+    const slot = card.querySelector(".slot");
+    const area = el("textarea", { id: `note-${id}`, placeholder: "For example: the button was greyed out, or the total said ₹1,000 instead of ₹1,180." });
+    const label = el("label", { for: `note-${id}`, text: "What did you see instead?" });
+    const kids = [label, area];
+    let file = null;
+    if (store.assets) {
+      const pick = el("input", { type: "file", id: `shot-${id}`, accept: "image/png,image/jpeg,image/webp,image/gif" });
+      pick.addEventListener("change", () => { file = pick.files?.[0] ?? null; });
+      kids.push(el("label", { for: `shot-${id}`, class: "hint", text: "Add a screenshot (optional)" }), pick);
+    } else {
+      kids.push(el("p", { class: "hint", text: "Screenshots can't be added here; describe what you saw in words." }));
+    }
+    const msg = el("p", { class: "hint", "aria-live": "polite" });
+    const saveBtn = el("button", { class: "btn save", type: "button", text: "Save this answer" });
+    const cancel = el("button", { class: "btn link", type: "button", text: "Cancel" });
+    saveBtn.addEventListener("click", async () => {
+      if (!area.value.trim()) { msg.textContent = "Write a few words about what you saw, so it can be fixed."; area.focus(); return; }
+      saveBtn.disabled = true; msg.textContent = "Saving…";
+      let shot = "";
+      if (file && store.assets) {
+        try { shot = (await store.assets.upload(file)).id; }
+        catch (e) { msg.textContent = e?.code === "too_large" ? "That picture is too big (20 MB at most). Saving your words without it." : "The screenshot couldn't be added. Saving your words without it."; }
+      }
+      card.dataset.editing = "";
+      await save(id, { status: "fail", note: area.value.trim(), shot });
+    });
+    cancel.addEventListener("click", () => { card.dataset.editing = ""; paint(id, card); });
+    slot.replaceChildren(el("div", { class: "failform" }, [...kids, el("div", { class: "answer" }, [saveBtn, cancel]), msg]));
+    area.focus();
+  }
+
+  async function save(id, value) {
+    const row = { ...value, step: steps.find((s) => s.id === id)?.num ?? "", at: new Date().toISOString() };
+    results[id] = row;
+    paint(id); progress();
+    if (store.db) {
+      try { await store.db.doc(`results/${id}`).set(row); }
+      catch { notice("Your answer couldn't be saved online. Check your connection and try again, or tell Claude in chat."); }
+    } else {
+      try { localStorage.setItem(LOCAL_KEY, JSON.stringify(results)); } catch { /* shown in the notice */ }
+    }
+  }
+
+  // Answers saved in this browser while the store was out of reach are sent up once it answers,
+  // unless the store already has an answer for that step.
+  async function moveLocalAnswers() {
+    let local = {};
+    try { local = JSON.parse(localStorage.getItem(LOCAL_KEY) || "{}"); } catch { return; }
+    const ids = Object.keys(local).filter((id) => steps.some((s) => s.id === id) && (local[id]?.status === "pass" || local[id]?.status === "fail"));
+    if (!ids.length) return;
+    try {
+      const have = new Set((await store.db.collection("results").get()).docs.map((d) => d.id));
+      for (const id of ids) if (!have.has(id)) await store.db.doc(`results/${id}`).set(local[id]);
+      localStorage.removeItem(LOCAL_KEY);
+    } catch { /* keep them locally; the next load tries again */ }
+  }
+
+  function notice(text) { const n = document.getElementById("storeNotice"); if (n) { n.textContent = text; n.hidden = false; } }
+
+  function progress() {
+    const total = steps.length;
+    const vals = steps.map((s) => results[s.id]?.status);
+    const pass = vals.filter((v) => v === "pass").length;
+    const fail = vals.filter((v) => v === "fail").length;
+    document.getElementById("trackPass").style.width = `${(pass / total) * 100}%`;
+    document.getElementById("trackFail").style.width = `${(fail / total) * 100}%`;
+    document.getElementById("count").textContent = `${pass + fail} of ${total} steps checked${fail ? ` · ${fail} different` : ""}`;
+    const verdict = document.getElementById("verdict");
+    const level = fail ? "red" : pass === total ? "green" : "amber";
+    verdict.className = `verdict ${level}`;
+    verdict.textContent = fail ? `Red: ${fail} step${fail > 1 ? "s" : ""} didn't match` : pass === total ? "Green: everything matched" : `Amber: ${pass + fail} of ${total} checked`;
+    const done = document.getElementById("done");
+    if (!done) return;
+    const all = pass + fail === total;
+    done.hidden = !all;
+    done.classList.toggle("has-fail", fail > 0);
+    done.replaceChildren(
+      el("h2", { text: fail ? `Finished. ${fail} step${fail > 1 ? "s" : ""} didn't match.` : "Finished. Everything matched." }),
+      el("p", { text: fail ? "Thank you, that's exactly what's needed. Tell Claude “I've finished testing”, and it will read your notes and fix it." : "Tell Claude “I've finished testing”, and it will record the change as checked." }),
+      guide.afterwards ? rich("p", guide.afterwards, "hint") : null,
+    );
+  }
+
+  app.append(header(), devices());
+  for (const part of [before(), sampleData(), ...scenarios()]) if (part) app.append(part);
+  app.append(el("section", { class: "done", id: "done", hidden: "" }));
+  progress();
+
+  // Answers live in the artifact's shared store so Claude can read them; without it, in this browser only.
+  // Call use() on window.claude itself: a detached reference loses its object and fails.
+  const use = (name) => (typeof window.claude?.use === "function" ? window.claude.use(name).catch(() => null) : Promise.resolve(null));
+  const start = async () => {
+    [store.db, store.assets] = await Promise.all([use("db"), use("assets")]);
+    if (!store.db) {
+      store.local = true;
+      try { Object.assign(results, JSON.parse(localStorage.getItem(LOCAL_KEY) || "{}")); } catch { /* start empty */ }
+      notice("Your answers are kept in this browser only. When you finish, tell Claude in chat which steps didn't match.");
+      steps.forEach((s) => paint(s.id)); progress();
+      return;
+    }
+    await moveLocalAnswers();
+    store.db.collection("results").onSnapshot((snap) => {
+      for (const k of Object.keys(results)) delete results[k];
+      for (const d of snap.docs) { const v = d.data(); if (v && (v.status === "pass" || v.status === "fail")) results[d.id] = v; }
+      steps.forEach((s) => paint(s.id)); progress();
+    }, () => notice("Live saving stopped. Reload the page; if it keeps happening, tell Claude your results in chat."));
+  };
+  start();
+})();
+</script>

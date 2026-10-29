@@ -53,6 +53,10 @@ export function synoWarnings(breakdown) {
 /** The done gate (PRD §4.3). Syno Sigma adds tests, audit and security; acceptance is checked here. */
 async function doneGate(root, task) {
   const open = acceptanceOf(task).filter((a) => !a.done).map((a) => `Acceptance not met yet: ${a.text}`);
+  // A test guide for this task with a step that didn't match keeps it open until a new guide passes (AC-TE.1).
+  const { latestTestFor } = await import("../testguide/cli.js");
+  const guide = latestTestFor(root, task.id);
+  if (guide?.totals.fail) open.push(`Test guide "${guide.title}" had ${guide.totals.fail} step(s) that didn't match. Fix them and test again.`);
   let sigma = { status: "not-set-up", reasons: [] };
   try {
     const { gate } = await import("../sigma/gate.js");
