@@ -16,6 +16,7 @@ export const NETWORK_ALLOWED = { "scripts/lib/pulse/net.js": "Syno Pulse, the on
 export const PROCESS_ALLOWED = {
   "scripts/lib/git.js": "read-only git from an allowlist",
   "scripts/lib/run.js": "project commands the owner approved",
+  "scripts/lib/pulse/sender.js": "Syno Pulse sends in a detached process, so hooks stay under 100 ms",
   "scripts/governor/": "ported Workload Governor queue runner (gov run)",
 };
 export const SIZE_EXEMPT = { "scripts/governor/": "ported Workload Governor 0.2.0, kept as it was" };
