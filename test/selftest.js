@@ -39,9 +39,15 @@ const mark = (ok) => (ok ? "✅" : "❌");
 console.log(`${mark(tests.fail === 0 && tests.code === 0)} Tests — ${tests.pass} passed, ${tests.fail} failed, ${tests.files} files, ${(tests.ms / 1000).toFixed(1)} s`);
 for (const name of tests.failed) console.log(`   ❌ ${name}`);
 
+// The Governor's own self-test (ported from Workload Governor 0.2.0), in a throwaway state folder.
+const gov = spawnSync(process.execPath, [join(TEST_DIR, "governor-selftest.cjs")], { cwd: ROOT, encoding: "utf8" });
+const govChecks = (gov.stdout.match(/(\d+) checks passed/) ?? [])[1];
+console.log(`${mark(gov.status === 0)} Syno Governor self-test — ${govChecks ? `${govChecks} checks passed` : "failed"}`);
+if (gov.status !== 0) console.log((gov.stdout + gov.stderr).trim().split("\n").slice(-10).join("\n"));
+
 const plugin = validatePlugin();
 if (plugin.skipped) console.log("⏭️  claude plugin validate — skipped (Claude CLI not found)");
 else console.log(`${mark(plugin.ok)} claude plugin validate`);
 if (plugin.ok === false) console.log(plugin.output);
 
-process.exit(tests.fail === 0 && tests.code === 0 && plugin.ok !== false ? 0 : 1);
+process.exit(tests.fail === 0 && tests.code === 0 && gov.status === 0 && plugin.ok !== false ? 0 : 1);

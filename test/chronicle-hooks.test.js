@@ -11,6 +11,11 @@ import { fixtureB, tag, tmp } from "./fixtures.js";
 const CLI = fileURLToPath(new URL("../scripts/syno.js", import.meta.url));
 const RUN = fileURLToPath(new URL("../scripts/hooks/run.js", import.meta.url));
 const syno = (repo, ...args) => spawnSync(process.execPath, [CLI, ...args, "--repo", repo, "--now", "2026-10-30T10:15:00"], { encoding: "utf8" });
+// Hooks run in a throwaway HOME and Governor state folder, never the owner's real ones.
+const sandboxEnv = () => {
+  const home = tmp("home");
+  return { ...process.env, HOME: home, USERPROFILE: home, WG_HOME: tmp("wg"), CLAUDE_ENV_FILE: join(home, "env.sh") };
+};
 const bash = (command, stderr = "") => ({ tool_name: "Bash", tool_input: { command }, tool_response: { stdout: "", stderr } });
 
 const repo = fixtureB();
@@ -20,8 +25,8 @@ test("AC-CH-12.1 in an uninitialised folder the hook says nothing", () => {
   const plain = tmp("plain");
   assert.equal(handle("SessionStart", {}, { cwd: plain }), null);
   assert.equal(handle("PostToolUse", bash("git tag v1.0.0"), { cwd: plain }), null);
-  const res = spawnSync(process.execPath, [RUN, "SessionStart"], { input: JSON.stringify({ cwd: plain }), encoding: "utf8" });
-  assert.equal(res.stdout, "");
+  const res = spawnSync(process.execPath, [RUN, "SessionStart"], { input: JSON.stringify({ cwd: plain }), env: sandboxEnv(), encoding: "utf8" });
+  assert.doesNotMatch(res.stdout, /Chronicle/);
 });
 
 test("CH-12.1 the session brief names the version, waiting changes and unrecorded tags", () => {
@@ -54,7 +59,7 @@ test("AC-CH-12.2 a forced internal error in a hook still exits 0", () => {
   spawnSync("mkdir", ["-p", join(broken, ".syno")]);
   writeFileSync(join(broken, ".syno/config.json"), "{ this is not json");
   writeFileSync(join(broken, ".syno/ideas"), "a file where a folder should be");
-  const res = spawnSync(process.execPath, [RUN, "SessionStart"], { input: JSON.stringify({ cwd: broken }), encoding: "utf8" });
+  const res = spawnSync(process.execPath, [RUN, "SessionStart"], { input: JSON.stringify({ cwd: broken }), env: sandboxEnv(), encoding: "utf8" });
   assert.equal(res.status, 0);
 });
 

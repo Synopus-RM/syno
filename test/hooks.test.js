@@ -12,7 +12,12 @@ import { MAX_LINES, composeBrief } from "../scripts/lib/brief.js";
 const RUN = fileURLToPath(new URL("../scripts/hooks/run.js", import.meta.url));
 const HOOKS = fileURLToPath(new URL("../hooks/hooks.json", import.meta.url));
 const fake = (name, handle, budgetMs = 200) => ({ name, budgetMs, handle });
-const hook = (event, stdin, cwd) => spawnSync(process.execPath, [RUN, event], { input: stdin, cwd, encoding: "utf8", timeout: 10000 });
+// Hooks run in a throwaway HOME and Governor state folder, never the owner's real ones.
+const sandboxEnv = () => {
+  const home = mkdtempSync(join(tmpdir(), "syno-home-"));
+  return { ...process.env, HOME: home, USERPROFILE: home, WG_HOME: mkdtempSync(join(tmpdir(), "syno-wg-")), CLAUDE_ENV_FILE: join(home, "env.sh") };
+};
+const hook = (event, stdin, cwd) => spawnSync(process.execPath, [RUN, event], { input: stdin, cwd, env: sandboxEnv(), encoding: "utf8", timeout: 20000 });
 
 test("AC-XH.1 a handler that throws doesn't stop the others", async () => {
   const reply = await dispatch("SessionStart", {}, [
@@ -58,11 +63,13 @@ test("X-02 decisions are ignored outside PreToolUse, and silence means no reply"
   assert.equal(reply, null);
 });
 
-test("AC-XH.2 in a plain folder the hook prints nothing and exits 0", () => {
+test("AC-XH.2 in a plain folder the session-start hook prints only the Governor brief", () => {
   const cwd = mkdtempSync(join(tmpdir(), "syno-hook-"));
   const res = hook("SessionStart", JSON.stringify({ cwd, session_id: "t" }), cwd);
   assert.equal(res.status, 0);
-  assert.equal(res.stdout, "");
+  const text = JSON.parse(res.stdout).hookSpecificOutput.additionalContext;
+  assert.match(text, /^Syno Governor is active/);
+  assert.doesNotMatch(text, /Syno brief for this project|Chronicle|Pulse/);
 });
 
 test("CH-12.2 broken input still exits 0 with no output", () => {
