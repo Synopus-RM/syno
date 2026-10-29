@@ -374,7 +374,7 @@ Adoption reads history and never changes it.
 
 1. Every write command re-renders the docs, so they are never out of date. Section 7 of PRD 0.1 set the layout; it now follows the shared report structure (section 5.3), with the verdict line under the banner.
 2. Output is deterministic: stable sort order, LF line endings, and no generated timestamps. Page text shows dates as "29 Oct 2026"; CHANGELOG.md keeps YYYY-MM-DD, as Keep a Changelog requires.
-3. Syno stores a hash of each file it rendered in `.syno/state.json`. If a generated page was edited by hand, the next render shows the difference and asks before overwriting it.
+3. Syno stores a hash of each file it rendered in `.syno/local/state.json`, which stays on this machine *(changed in 0.2)*. If a generated page was edited by hand, the next render shows the difference and asks before overwriting it.
 4. *(new in 0.2)* Each Markdown page also renders as a styled Sky Glass HTML page in `docs/syno/html/`.
 
 - AC-CH-09.1: Rendering twice produces byte-identical files, Markdown and HTML.
@@ -389,7 +389,7 @@ Adoption reads history and never changes it.
 
 #### CH-11 Sync with tags made outside Syno (Must)
 
-1. `/syno:sync` finds tags created since the last sync, recorded as `lastSyncedTag` in `.syno/state.json`.
+1. `/syno:sync` finds version tags that have no release record yet; the newest synced tag is kept as `lastSyncedTag` in `.syno/local/state.json`.
 2. For each new tag, it proposes a release record built from its commits, as adoption does. The owner confirms, then the docs re-render.
 
 - AC-CH-11.1: A tag v1.1.0 created with plain git appears as a proposed 1.1.0 release with its commits classified.
@@ -792,7 +792,6 @@ Every flow follows the same rule: Syno shows a preview, the owner answers, and S
 ```
 .syno/
   config.json              committed   Syno-wide settings (below)
-  state.json               committed   Chronicle render hashes, last synced tag
   pulse.json               committed   Pulse project marker
   devices.json             committed   Devices settings (was app-sync.json)
   ideas/ changes/ releases/ snapshots/   committed   Chronicle records (PRD 0.1)
@@ -803,7 +802,7 @@ Every flow follows the same rule: Syno shows a preview, the owner answers, and S
   security/abuse-cases.json committed  Abuse-case register
   5s/standards.json        committed   5S standards
   5s/<date>.json           committed   5S scores
-  local/                   ignored     runs.jsonl, audit/, tests/, security/ findings
+  local/                   ignored     state.json (render hashes, last synced tag), runs.jsonl, audit/, tests/, security/ findings
   reports/                 ignored     HTML and Markdown reports
   sessions/                ignored     Pause resume files
   trash/                   ignored     5S trash, restorable
@@ -1130,6 +1129,7 @@ Defaults chosen during the brainstorms, all marked assumed.
 - A unit is a task (or a Chronicle change without tasks); the sigma target is 4σ. (assumed)
 - 5S flags files over 5 MB and branches idle for 30 days, and reminds after 7 days. (assumed)
 - English only; free. (assumed)
+- Chronicle's state (render hashes and the last synced tag) lives in `.syno/local/state.json`, git-ignored, because it changes on every render and would make two branches conflict in `.syno/` (AC-CH-04.2). Hand edits are spotted on the machine that rendered the page. (decided during the build, 2026-10-30)
 - PRD 0.1's Chronicle defaults stay: 0.x breaking changes propose a minor bump, a release embeds and removes its pending changes, snapshot depth 3, the last 50 tags, a 60% rename threshold, and CLI writes need `--confirm`. (assumed, from PRD 0.1)
 
 ## 19. Open questions and risks
