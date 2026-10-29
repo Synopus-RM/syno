@@ -36,9 +36,9 @@ function section(s) {
   const parts = [`<h3>${esc(s.heading)}</h3>`];
   if (s.intro) parts.push(`<p class="intro">${esc(s.intro)}</p>`);
   if (s.text) parts.push(...[].concat(s.text).map((t) => `<p>${esc(t)}</p>`));
+  if (s.list?.length) parts.push(`<ul>${s.list.map((li) => `<li>${esc(li)}</li>`).join("")}</ul>`);
   if (s.bars?.length) parts.push(bars(s.bars));
   if (s.table?.rows?.length) parts.push(table(s.table));
-  if (s.list?.length) parts.push(`<ul>${s.list.map((li) => `<li>${esc(li)}</li>`).join("")}</ul>`);
   if (s.note) parts.push(`<p class="note">${esc(s.note)}</p>`);
   return `<section class="card">${parts.join("")}</section>`;
 }
@@ -73,16 +73,18 @@ export function toHtml(report, { css, t, date, version }) {
 </head>
 <body>
 <main>
+${report.banner ? `<p class="note">${esc(report.banner)}</p>` : ""}
 <p class="eyebrow">${esc(report.eyebrow ?? "Syno")}</p>
 <h1>${esc(report.title)}</h1>
 <p class="meta">${esc(report.project)} · ${esc(date(report.date))}</p>
 <section class="card verdict level-${level}" aria-label="Verdict"><span class="pill">${esc(t.verdict[level])}</span><p>${esc(report.verdict.text)}</p></section>
+${report.howToRead ? `<p class="intro"><strong>How to read this page.</strong> ${esc(report.howToRead)}</p>` : ""}
 ${report.notice ? `<p class="note">${esc(report.notice)}</p>` : ""}
 <section class="card"><h2>${esc(t.report.summary)}</h2><ul>${report.summary.map((s) => `<li>${esc(s)}</li>`).join("")}</ul></section>
 <section class="card actions"><h2>${esc(t.report.actions)}</h2>${actions(report.actions, t, date)}</section>
 ${detail}
 ${glossary}
-<footer>${esc(t.report.generated.replace("{version}", version).replace("{date}", date(report.date)))}</footer>
+<footer>${esc(report.footer ?? t.report.generated.replace("{version}", version).replace("{date}", date(report.date)))}</footer>
 </main>
 </body>
 </html>

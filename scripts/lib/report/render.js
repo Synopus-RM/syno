@@ -5,11 +5,11 @@
 // report are byte-identical. The strings table is static data loaded once.
 //
 // A report:
-//   { title, project, date: "YYYY-MM-DD", eyebrow?, notice?,
+//   { title, project, date: "YYYY-MM-DD", eyebrow?, notice?, banner?, howToRead?, footer?,
 //     verdict: { level: "green"|"amber"|"red", text },
 //     summary: [3 to 5 strings],
 //     actions: [{ text, who?, by?: "YYYY-MM-DD" }],
-//     sections: [{ heading, intro?, text?, list?, note?,
+//     sections: [{ heading, intro?, text?, list?, note?, mermaid? (Markdown copy only),
 //                  table?: { columns: [{ label, num? }], rows: [[cell, …]] },
 //                  bars?: [{ label, value: 0-100, display?, tone?: "good"|"warn"|"bad", note? }] }],
 //     glossary: [{ term, meaning }] }
@@ -69,10 +69,11 @@ function mdBars(items) {
 function mdSection(s) {
   const out = [`### ${mdText(s.heading)}`];
   if (s.intro) out.push(mdText(s.intro));
+  if (s.mermaid) out.push(`\`\`\`mermaid\n${s.mermaid}\n\`\`\``);
   if (s.text) out.push(...[].concat(s.text).map(mdText));
+  if (s.list?.length) out.push(s.list.map((li) => `- ${mdText(li)}`).join("\n"));
   if (s.bars?.length) out.push(mdBars(s.bars));
   if (s.table?.rows?.length) out.push(mdTable(s.table));
-  if (s.list?.length) out.push(s.list.map((li) => `- ${mdText(li)}`).join("\n"));
   if (s.note) out.push(`*${mdText(s.note)}*`);
   return out.join("\n\n");
 }
@@ -89,10 +90,12 @@ function mdActions(items, t) {
 
 export function toMarkdown(report, { t = STRINGS, version }) {
   const parts = [
+    ...(report.banner ? [`> ${mdText(report.banner)}`] : []),
     `# ${mdText(report.title)}`,
     `${mdText(report.eyebrow ?? "Syno")} · ${mdText(report.project)} · ${readerDate(report.date, t)}`,
     `> **${t.verdict[report.verdict.level]}:** ${mdText(report.verdict.text)}`,
   ];
+  if (report.howToRead) parts.push(`**How to read this page.** ${mdText(report.howToRead)}`);
   if (report.notice) parts.push(`*${mdText(report.notice)}*`);
   parts.push(`## ${t.report.summary}`, report.summary.map((s) => `- ${mdText(s)}`).join("\n"));
   parts.push(`## ${t.report.actions}`, mdActions(report.actions, t));
@@ -100,7 +103,7 @@ export function toMarkdown(report, { t = STRINGS, version }) {
   if (report.glossary?.length) {
     parts.push(`## ${t.report.glossary}`, report.glossary.map((g) => `- **${mdText(g.term)}**: ${mdText(g.meaning)}`).join("\n"));
   }
-  parts.push("---", t.report.generated.replace("{version}", version).replace("{date}", readerDate(report.date, t)));
+  parts.push("---", report.footer ?? t.report.generated.replace("{version}", version).replace("{date}", readerDate(report.date, t)));
   return `${parts.join("\n\n")}\n`;
 }
 
