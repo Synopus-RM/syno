@@ -19,6 +19,10 @@ const SECRET_PATTERNS = [
 ];
 const ASSIGNED = /\b(api[_-]?key|secret|password|passwd|token|auth[_-]?key|private[_-]?key)\b\s*[:=]\s*["'`]([^"'`\s]{12,})["'`]/i;
 const SKIP = /(^|\/)(package-lock\.json|pnpm-lock\.yaml|yarn\.lock|Cargo\.lock|poetry\.lock)$|\.min\.(js|css)$|\.(png|jpe?g|gif|webp|ico|pdf|zip|gz|woff2?|ttf|mp4|mp3)$/i;
+// Keys on these variables are sent to the browser on purpose (a Firebase web key, a Maps key), so they are
+// not secrets; the risk is a key that isn't restricted to the app's own domains.
+const PUBLIC_VAR = /\b(NEXT_PUBLIC|VITE|EXPO_PUBLIC|REACT_APP|PUBLIC|NUXT_PUBLIC)_\w+\s*[:=]/;
+const BROWSER_KEYS = new Set(["Google API key"]);
 const PLACEHOLDER = /^(x{4,}|\*{4,}|your[_-]|changeme|example|placeholder|dummy|test1234|<.*>|\$\{.*\})/i;
 
 export const mask = (value) => `${value.slice(0, 4)}…`;
@@ -35,7 +39,8 @@ export function secretsIn(line) {
   const out = [];
   for (const p of SECRET_PATTERNS) {
     const m = p.re.exec(line);
-    if (m) out.push({ name: p.name, severity: p.severity, masked: mask(m[0]) });
+    if (m && BROWSER_KEYS.has(p.name) && PUBLIC_VAR.test(line)) out.push({ name: `Public ${p.name}`, severity: "Low", masked: mask(m[0]), public: true });
+    else if (m) out.push({ name: p.name, severity: p.severity, masked: mask(m[0]) });
   }
   const a = ASSIGNED.exec(line);
   if (!out.length && a && !PLACEHOLDER.test(a[2]) && entropy(a[2]) >= 3.5) out.push({ name: `Hard-coded ${a[1].toLowerCase()}`, severity: "High", masked: mask(a[2]) });
@@ -47,7 +52,9 @@ export function scanSecrets(root, { history = false } = {}) {
   for (const f of projectFiles(root).filter((x) => !SKIP.test(x))) {
     if (statSync(join(root, f)).size > 1_000_000) continue;
     readFileSync(join(root, f), "utf8").split("\n").forEach((line, i) => {
-      for (const s of secretsIn(line)) findings.push({ category: "secret", severity: s.severity, title: `${s.name} in a tracked file`, reason: "Anyone with the code can use it. Revoke it, then move it to an environment variable.", evidence: [{ file: f, line: i + 1, masked: s.masked }], fix: "Revoke the key, load it from an environment variable, and keep the real value out of git." });
+      for (const s of secretsIn(line)) findings.push(s.public
+        ? { category: "secret", severity: "Low", title: `${s.name} in a tracked file`, reason: "This key reaches the browser by design, so it isn't secret, but anyone can reuse it if it isn't restricted.", evidence: [{ file: f, line: i + 1, masked: s.masked }], fix: "In Google Cloud, restrict the key to your own domains and only the APIs the app uses. In an example file, a placeholder is enough." }
+        : { category: "secret", severity: s.severity, title: `${s.name} in a tracked file`, reason: "Anyone with the code can use it. Revoke it, then move it to an environment variable.", evidence: [{ file: f, line: i + 1, masked: s.masked }], fix: "Revoke the key, load it from an environment variable, and keep the real value out of git." });
     });
   }
   if (history) {

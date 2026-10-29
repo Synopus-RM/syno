@@ -128,6 +128,9 @@ test("S-16 secrets: patterns, entropy, and placeholders that aren't secrets", ()
   assert.equal(secretsIn('const k = "AKIAIOSFODNN7EXAMPLE";')[0].name, "AWS access key");
   assert.equal(secretsIn('password = "Xk9#mQ2$vL7pR4wZ"')[0].severity, "High");
   assert.deepEqual(secretsIn('password = "your-password-here"'), []);
+  const web = secretsIn('NEXT_PUBLIC_FIREBASE_API_KEY="AIzaSyA1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q"');
+  assert.deepEqual([web[0].name, web[0].severity], ["Public Google API key", "Low"], "a browser key is public by design");
+  assert.equal(secretsIn('GOOGLE_API_KEY="AIzaSyA1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q"')[0].severity, "High");
   assert.deepEqual(secretsIn('apiKey: "${process.env.API_KEY}"'), []);
   assert.ok(entropy("aaaaaaaa") < 1 && entropy("Xk9#mQ2$vL7pR4wZ") > 3.5);
 });
