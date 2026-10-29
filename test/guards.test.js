@@ -21,6 +21,7 @@ export const PROCESS_ALLOWED = {
   "scripts/lib/pulse/sender.js": "Syno Pulse sends in a detached process, so hooks stay under 100 ms",
   "scripts/governor/": "ported Workload Governor queue runner (gov run)",
   "skills/progress/scripts/collect.mjs": "Syno Progress reads git (read-only) to collect facts",
+  "skills/tasks/scripts/collect.mjs": "Syno Tasks reads git (read-only) to collect facts",
 };
 export const SIZE_EXEMPT = { "scripts/governor/": "ported Workload Governor 0.2.0, kept as it was", "skills/": "tools ported with their skills, kept as they were" };
 const PURE_DIRS = ["scripts/lib/report/", "scripts/lib/chronicle/render/"];

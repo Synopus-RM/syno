@@ -25,6 +25,12 @@ export async function run(ctx) {
   const [sub = "status"] = ctx.args;
   if (!["status", "render"].includes(sub)) throw usage("progress takes: status, render.");
   const { report, facts } = inputs(ctx);
+  // With a Syno Tasks breakdown, Progress shows the same overall % (AC-PR.2).
+  const breakdown = readJson(join(ctx.repo, ".syno/tasks/breakdown.json"));
+  if (breakdown?.tree && report.overallPercent == null) {
+    const { modelFor } = await import("../tasks/cli.js");
+    report.overallPercent = (await modelFor(ctx.repo, breakdown)).totals.pct;
+  }
   const history = readJson(join(ctx.repo, HISTORY), []);
   const model = progressModel(report, facts, history.at(-1) ?? null);
   const date = today(nowOf(ctx));

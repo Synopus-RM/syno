@@ -1,0 +1,89 @@
+{
+  "project": {
+    "name": "FieldPro — service technician app",
+    "owner": "Ak",
+    "client": "Sample client",
+    "description": "Mobile app and admin web for scheduling field technicians, job tracking and invoicing.",
+    "startDate": "2026-10-05",
+    "targetDate": "2026-11-20"
+  },
+  "asOf": "2026-10-25T15:30:00+05:30",
+  "headline": "Login and project setup are on main. Job list is close; payments are waiting on Razorpay keys, which pushes billing onto the critical path.",
+  "settings": { "estimateUnit": "h", "hoursPerDay": 6, "workingDays": [1, 2, 3, 4, 5, 6], "unassignedLanes": 1 },
+  "team": [
+    { "name": "Ravi", "role": "Full-stack", "hoursPerDay": 6 },
+    { "name": "Meena", "role": "Mobile", "hoursPerDay": 6 }
+  ],
+  "milestones": [
+    { "title": "Beta to client", "date": "2026-11-10" }
+  ],
+  "tree": [
+    {
+      "id": "P1", "title": "Foundation", "owner": "Ravi",
+      "children": [
+        { "id": "P1.1", "title": "Project setup and CI", "status": "done", "estimate": 6, "actual": 5, "completed": "2026-10-05", "start": "2026-10-05",
+          "evidence": "src/index.js; first commit on main", "git": { "state": "merged", "ref": "a1b2c3d" } },
+        { "id": "P1.2", "title": "Authentication",
+          "children": [
+            { "id": "P1.2.1", "title": "Email + OTP login", "status": "done", "estimate": 10, "actual": 12, "start": "2026-10-06", "completed": "2026-10-09",
+              "evidence": "src/auth/login.js, PR #3 merged", "git": { "state": "merged", "pr": "3" },
+              "acceptance": [ { "text": "OTP expires after 5 minutes", "done": true }, { "text": "Rate-limit 5 attempts per hour", "done": true } ] },
+            { "id": "P1.2.2", "title": "Role-based access (admin, dispatcher, technician)", "status": "done", "estimate": 6, "verified": false, "source": "PLAN.md:6",
+              "git": { "state": "unknown" } }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P2", "title": "Jobs",
+      "children": [
+        { "id": "P2.1", "title": "Job list", "owner": "Meena",
+          "children": [
+            { "id": "P2.1.1", "title": "Job list screen with filters", "status": "in_progress", "estimate": 12, "owner": "Meena",
+              "next": "Add server-side pagination", "git": { "state": "committed", "branch": "feat/job-list" },
+              "acceptance": [ { "text": "Filter by status and date", "done": true }, { "text": "Paginate 50 at a time", "done": false }, { "text": "Works offline from cache", "done": false } ] },
+            { "id": "P2.1.2", "title": "Job detail and status updates", "status": "todo", "estimate": 10, "owner": "Meena", "dependsOn": ["P2.1.1"], "priority": "high" }
+          ]
+        },
+        { "id": "P2.2", "title": "Dispatch",
+          "children": [
+            { "id": "P2.2.1", "title": "Assign technician to job", "status": "todo", "estimate": 8, "owner": "Ravi", "dependsOn": ["P1.2"], "priority": "high", "due": "2026-10-28" },
+            { "id": "P2.2.2", "title": "SLA timers and alerts", "status": "blocked", "estimate": 10, "owner": "Ravi", "dependsOn": ["P2.2.1"],
+              "blocker": "Client hasn't confirmed SLA hours per job type" },
+            { "id": "P2.2.3", "title": "Technician route map", "status": "todo", "estimate": 14, "owner": "Meena", "dependsOn": ["P2.1.2"], "priority": "low" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P3", "title": "Billing & launch",
+      "children": [
+        { "id": "P3.1", "title": "Invoice PDF", "status": "done", "estimate": 6, "owner": "Ravi", "completed": "2026-10-24",
+          "evidence": "src/billing/invoice.js", "git": { "state": "committed", "branch": "feat/invoice-pdf" } },
+        { "id": "P3.2", "title": "Razorpay checkout", "status": "todo", "estimate": 12, "owner": "Ravi", "dependsOn": ["P3.1", "P2.2.1"], "priority": "high" },
+        { "id": "P3.3", "title": "Play Store release", "dependsOn": ["P3.2", "P2.1.2"], "due": "2026-11-18",
+          "children": [
+            { "id": "P3.3.1", "title": "Store listing and screenshots", "status": "todo", "estimate": 3 },
+            { "id": "P3.3.2", "title": "Signed release build", "status": "todo", "estimate": 3, "owner": "Meena" }
+          ]
+        }
+      ]
+    }
+  ],
+  "manual": [
+    { "action": "Get live Razorpay key ID and secret", "why": "Checkout can't be built or tested without them", "how": "Razorpay dashboard, Settings, API keys; add to the hosting env, not to git",
+      "priority": "high", "blocking": true, "blocks": "P3.2 Razorpay checkout", "category": "Secrets & config", "relatesTo": ["P3.2"] },
+    { "action": "Confirm SLA hours per job type with the client", "why": "SLA timers are blocked until the rules are known", "how": "Short call or email; record the answer in docs/sla.md",
+      "priority": "high", "blocking": true, "blocks": "P2.2.2 SLA timers", "category": "Client input", "relatesTo": ["P2.2.2"] },
+    { "action": "Review and merge feat/invoice-pdf", "why": "Invoice PDF is finished but only on a local branch", "how": "Push the branch, open a PR, merge into main",
+      "priority": "medium", "blocking": false, "category": "Review & merge", "relatesTo": ["P3.1"] },
+    { "action": "Create Google Play developer account", "why": "Needed for the release", "how": "play.google.com/console, one-time fee", "priority": "medium", "category": "Accounts & access", "relatesTo": ["P3.3"] }
+  ],
+  "risks": [
+    { "text": "No automated tests around payments", "severity": "medium", "mitigation": "Add webhook signature tests with P3.2" }
+  ],
+  "decisions": [
+    { "date": "2026-10-12", "text": "Use OTP login instead of passwords for technicians" }
+  ],
+  "sources": ["PLAN.md", "git", "conversation"]
+}

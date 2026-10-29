@@ -99,6 +99,7 @@ export function progressReport(m, { project, date }) {
       { term: "Phase", meaning: "A stage of the project, such as Design, Build or Launch." },
       { term: "Main branch", meaning: "The copy of the code that is shipped. Work counts as delivered once it is there." },
       { term: "Blocked", meaning: "Work that can't move until someone else does something." },
+      { term: "Merge", meaning: "Joining finished work into the main copy of the code, after a review." },
       { term: "Branch", meaning: "A separate copy of the code where a piece of work is built before it joins the main branch." },
     ],
   };
