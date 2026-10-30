@@ -17,7 +17,7 @@ The CLI is `node "${CLAUDE_PLUGIN_ROOT}/scripts/syno.js"`, written `syno` below.
 
 ## The five steps
 
-1. **Sort** — `syno 5s sort`. Show the findings. Ask with AskUserQuestion (multiSelect) which to move to the trash: the ticked ones (duplicates, temp files, empty folders) are the recommended picks; probably-unused and large files are only picked if the owner chooses them. Run `syno 5s sort --items <ids> --confirm` only after the yes.
+1. **Sort** — `syno 5s sort`. Show the findings. Ask with AskUserQuestion (multiSelect) which to move to the trash: the ticked ones (files named as copies, temp files, empty folders) are the recommended picks; other same-bytes files, probably-unused files and large files are only picked if the owner chooses them, because something may use them by name. Run `syno 5s sort --items <ids> --confirm` only after the yes.
 2. **Set in Order** — `syno 5s set`. Needs standards (step 4). Show each move with its reason and every import change it needs, then ask "Make these moves?" Options: "Make them (Recommended)" and "Not now". Only on yes, pass `--confirm`.
 3. **Shine** — `syno 5s shine` lists the project's own formatter, linter and type checker. Ask before running them. Only on yes, run `syno 5s shine --confirm` with `run_in_background: true`: each check waits in Syno Governor's queue. Report the error counts.
 4. **Standardize** — `syno 5s standardize` proposes `.syno/5s/standards.json` from what the project already does most (naming, a 300-line limit, required files). Ask before saving it. Once it exists, the same command checks the project against it. Follow it whenever you create files.

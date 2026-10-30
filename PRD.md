@@ -630,7 +630,7 @@ Measures quality with Six Sigma and runs the gates. DMAIC steps: Measure and Con
 Keeps the project and its files sorted, in order, clean, consistent and that way over time (section 4.4). It works on the project folder only and respects `.gitignore`.
 
 1. `/syno:5s` runs all five steps; `/syno:5s sort|set|shine|standardize|sustain` runs one.
-2. **Sort** lists unused files (not imported or referenced, by stack), duplicates (same hash), temp and log files, empty folders, files over 5 MB, and branches merged into main or idle for 30 days. Branches are listed only; Syno never deletes one.
+2. **Sort** lists unused files (not imported or referenced, by stack), duplicates (same hash), temp and log files, empty folders, files over 5 MB, and branches merged into main or idle for 30 days. Branches are listed only; Syno never deletes one. A same-hash file is ticked only when its name says it is a copy; the rest are listed for the owner to check. Test baselines, fixtures and tool-named files repeated across folders are not duplicates. Other worktrees and repositories inside the project are skipped.
 3. **Set in Order** compares the layout with `.syno/5s/standards.json` and proposes moves, each with a reason and the import changes it needs.
 4. **Shine** runs the project's own formatter, linter and type checker through Syno Governor when the owner says yes, and reports the error counts.
 5. **Standardize** proposes `.syno/5s/standards.json` from the stack's conventions: file and folder naming, where things go, a 300-line file limit, required files (README, LICENSE, `.env.example`). Every Syno function follows it when it creates files.

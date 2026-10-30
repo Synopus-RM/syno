@@ -60,7 +60,7 @@ test("§10 Syno removes only its own records, never project files or the trash",
 });
 
 test("§10 the git allowlist lets reads through and refuses every write", () => {
-  for (const ok of [["log", "--oneline"], ["tag", "--list"], ["status", "--porcelain"], ["config", "--get", "user.name"], ["remote", "get-url", "origin"], ["diff", "--name-status", "-M", "a", "b"], ["ls-tree", "-r", "-l", "HEAD"]]) {
+  for (const ok of [["log", "--oneline"], ["tag", "--list"], ["status", "--porcelain"], ["config", "--get", "user.name"], ["remote", "get-url", "origin"], ["diff", "--name-status", "-M", "a", "b"], ["ls-tree", "-r", "-l", "HEAD"], ["check-ignore", "-q", "--", "out"]]) {
     assert.doesNotThrow(() => checkGitArgs(ok), ok.join(" "));
   }
   for (const bad of [["push"], ["fetch"], ["pull"], ["checkout", "main"], ["stash"], ["reset", "--hard"], ["commit", "-m", "x"], ["merge", "x"], ["rebase", "x"], ["tag", "v1.0.0"], ["tag", "-d", "v1"], ["tag", "-a", "v1", "-m", "x"], ["diff", "--output=x"], ["log", "--output=x"], ["config", "user.name", "Evil"], ["remote", "add", "x", "y"], ["-c", "core.pager=sh", "log"], ["status"]]) {
