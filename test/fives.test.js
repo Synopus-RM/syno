@@ -61,6 +61,54 @@ test("S-14 Sort ticks duplicates, temp files and empty folders; it only lists un
   assert.equal(res.applied, false);
 });
 
+/** Files that match byte for byte on purpose, next to real copies. */
+function fixtureSame() {
+  const root = initRepo("fixture-same");
+  commit(root, "feat: start", "2026-01-01T09:00:00Z", {
+    ".gitignore": "out/\n.claude/worktrees/\n",
+    "packages/a/tsconfig.json": '{"include":["src"]}\n', "packages/b/tsconfig.json": '{"include":["src"]}\n',
+    "packages/a/vitest.config.ts": "export default {};\n", "packages/b/vitest.config.ts": "export default {};\n",
+    "app/res/mipmap/ic_launcher.xml": "<icon/>\n", "app/res/mipmap/ic_launcher_round.xml": "<icon/>\n",
+    "tests/__screenshots__/sign-in-minimal.png": "pixels\n", "tests/__screenshots__/sign-in-balanced.png": "pixels\n",
+    "docs/logo.svg": "<svg/>\n", "assets/logo.svg": "<svg/>\n",
+    "notes.txt": "notes\n", "notes copy.txt": "notes\n",
+    "photo.jpg": "jpg\n", "photo (1).jpg": "jpg\n",
+    "plan.md": "plan\n", "Copy of plan.md": "plan\n",
+  });
+  const syno = (...a) => spawnSync(process.execPath, [CLI, ...a, "--repo", root, "--now", "2026-10-30T10:00:00"], { encoding: "utf8", env: { ...process.env, SYNO_PULSE_HOME: tmp("pulse") } });
+  return { root, syno };
+}
+
+test("S-14 Sort ticks a same-bytes file only when its name says it is a copy", () => {
+  const { syno } = fixtureSame();
+  const { findings } = JSON.parse(syno("5s", "sort", "--json").stdout);
+  const byId = Object.fromEntries(findings.map((f) => [f.id, f.pick]));
+  for (const copy of ["notes copy.txt", "photo (1).jpg", "Copy of plan.md"]) assert.equal(byId[`dup:${copy}`], true, copy);
+  for (const needed of ["app/res/mipmap/ic_launcher_round.xml", "assets/logo.svg"]) assert.equal(byId[`dup:${needed}`], false, needed);
+  assert.ok(!findings.some((f) => /tsconfig|vitest\.config|__screenshots__/.test(f.path)), "per-folder config and test baselines aren't duplicates");
+});
+
+test("S-14 Sort stays out of ignored folders, other worktrees and nested repositories", () => {
+  const { root, syno } = fixtureSame();
+  mkdirSync(join(root, "out/_next/abc"), { recursive: true });
+  execFileSync("git", ["worktree", "add", "-q", ".claude/worktrees/feature"], { cwd: root });
+  mkdirSync(join(root, ".claude/worktrees/feature/hollow"));
+  execFileSync("git", ["init", "-q", "vendor/lib"], { cwd: root });
+  mkdirSync(join(root, "vendor/lib/hollow"));
+  mkdirSync(join(root, "left/hollow"), { recursive: true });
+  const { findings } = JSON.parse(syno("5s", "sort", "--json").stdout);
+  assert.deepEqual(findings.filter((f) => f.kind === "empty").map((f) => f.id), ["empty:left/hollow"]);
+});
+
+test("S-14 only ticked items lower Sort's score, and list-only branches aren't counted as found", () => {
+  const { root, syno } = fixtureSame();
+  execFileSync("git", ["branch", "done-work"], { cwd: root });
+  const { check } = JSON.parse(syno("5s", "--json").stdout);
+  assert.equal(check.scores.sort, 70, "three ticked copies");
+  assert.equal(check.counts.sort, 5, "three copies and two to check, without the branch");
+  assert.ok(JSON.parse(syno("5s", "sort", "--json").stdout).findings.some((f) => f.id === "branch:done-work"), "the branch is still listed");
+});
+
 test("AC-FS.2 no 5S command deletes a file outside .syno/trash/", () => {
   const { root, syno } = fixtureH();
   const before = inventory(root);

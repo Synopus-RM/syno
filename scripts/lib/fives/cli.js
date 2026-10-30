@@ -116,7 +116,7 @@ function check(ctx) {
     ...issues.slice(0, 5).map((i) => `Fix ${i.path}: ${i.why}.`),
   ];
   const details = [...sort.map((f) => `${f.path}: ${f.why}`), ...issues.map((i) => `${i.path}: ${i.why}`)].slice(0, 30);
-  return { schemaVersion: 1, date, scores: sc, counts: { sort: sort.length, moves: standards ? moves.length : null, shine: shineRec?.results?.reduce((n, r) => n + r.errors, 0) ?? null, standards: std ? issues.length : null }, next, details };
+  return { schemaVersion: 1, date, scores: sc, counts: { sort: sort.filter((f) => !f.listOnly).length, moves: standards ? moves.length : null, shine: shineRec?.results?.reduce((n, r) => n + r.errors, 0) ?? null, standards: std ? issues.length : null }, next, details };
 }
 
 async function sustain(ctx) {

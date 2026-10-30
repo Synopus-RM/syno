@@ -5,7 +5,7 @@
 import { execFileSync } from "node:child_process";
 import { refusal } from "./fsutil.js";
 
-const READ_ONLY = new Set(["log", "show", "ls-tree", "ls-files", "rev-parse", "rev-list", "for-each-ref", "merge-base", "cat-file", "describe"]);
+const READ_ONLY = new Set(["log", "show", "ls-tree", "ls-files", "rev-parse", "rev-list", "for-each-ref", "merge-base", "cat-file", "describe", "check-ignore"]);
 const CONFIG_KEYS = new Set(["user.name", "user.email", "remote.origin.url"]);
 // Options that make a read-only command write a file, run a program or change config.
 const FORBIDDEN_ARG = /^(--output|--exec|--upload-pack|--receive-pack|--config-env|--ext-diff|--textconv|-c$)/;
