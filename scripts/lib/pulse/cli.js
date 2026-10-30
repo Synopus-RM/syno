@@ -39,7 +39,8 @@ Why: project status, quality and effort tracking for Synopus. The panel
 can only view this data; it cannot send anything back to your sessions.
 Where: Synopus's Firebase project, Mumbai (asia-south1). Kept 12 months.
 Withdraw any time: /syno:pulse leave revokes this machine and deletes
-local data. Ask the PM to delete what is already stored.`;
+local data. To see or delete what is already stored, write to
+privacy@synopus.in.`;
 
 const projectRoot = (cwd) => tryGit(["rev-parse", "--show-toplevel"], { cwd }) || cwd;
 const result = (text, data = {}, code = 0) => ({ code, text, data });

@@ -459,7 +459,8 @@ Why: project status, quality and effort tracking for Synopus. The panel
 can only view this data; it cannot send anything back to your sessions.
 Where: Synopus's Firebase project, Mumbai (asia-south1). Kept 12 months.
 Withdraw any time: /syno:pulse leave revokes this machine and deletes
-local data. Ask the PM to delete what is already stored.
+local data. To see or delete what is already stored, write to
+privacy@synopus.in.
 ```
 
 - AC-PU.1: In a project without `.syno/pulse.json`, every Pulse hook exits in under 20 ms and opens no connection.
