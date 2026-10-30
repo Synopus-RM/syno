@@ -85,5 +85,16 @@ export function sigmaReport(m, { project, gates = [], overrides = [] }) {
   };
 }
 
-/** What goes to Pulse as sigma.snapshot: numbers only. */
-export const sigmaPulse = (m) => ({ units: m.units, unit: m.unit, opportunities: m.opportunities, defects: m.defects, dpmo: m.dpmo, sigma: m.sigma, target: m.target, fpy: m.fpy.pct, bySource: m.bySource });
+/** What goes to Pulse as sigma.snapshot: numbers, plus each gate's pass or fail (the panel's Sigma column turns red on a fail). */
+export const sigmaPulse = (m, gates = []) => ({
+  units: m.units,
+  unit: m.unit,
+  opportunities: m.opportunities,
+  defects: m.defects,
+  dpmo: m.dpmo,
+  sigma: m.sigma,
+  target: m.target,
+  fpy: m.fpy.pct,
+  bySource: m.bySource,
+  ...(gates.length ? { gates: Object.fromEntries(gates.map((g) => [g.name.toLowerCase(), g.status])) } : {}),
+});

@@ -98,6 +98,7 @@ test("§5.3 the report reads plainly, and Pulse gets numbers only", async () => 
   assert.deepEqual(renderReport(report, { css: "", version: "0.1.0" }).problems, []);
   assert.equal(sigmaReport(m, { project: "Demo", gates: [{ name: "Done", status: "fail", reasons: ["T7: a test failed"] }] }).verdict.level, "red");
   assert.doesNotMatch(JSON.stringify(sigmaPulse(m)), /Task|Check/);
+  assert.deepEqual(sigmaPulse(m, [{ name: "Done", status: "pass" }, { name: "Release", status: "fail" }]).gates, { done: "pass", release: "fail" }, "the panel's Sigma column reads the gates");
 });
 
 test("S-13 tasks tick --failed records a criterion's first failed check once", () => {

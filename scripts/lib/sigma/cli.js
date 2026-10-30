@@ -28,7 +28,7 @@ async function shaped(ctx) {
   const config = loadConfig(ctx.repo) ?? {};
   const m = await measure(ctx.repo, { date: today(nowOf(ctx)), target: Number(config.sigma?.target ?? 4) });
   const extra = await gatesAndOverrides(ctx.repo, config);
-  return { m, report: sigmaReport(m, { project: config.project?.name ?? readJson(join(ctx.repo, ".syno/config.json"))?.project?.name ?? "This project", ...extra }) };
+  return { m, gates: extra.gates, report: sigmaReport(m, { project: config.project?.name ?? readJson(join(ctx.repo, ".syno/config.json"))?.project?.name ?? "This project", ...extra }) };
 }
 
 const findTask = (nodes, id) => (nodes ?? []).reduce((hit, n) => hit ?? (n.id === id ? n : findTask(n.children, id)), null);
@@ -73,11 +73,11 @@ export async function run(ctx) {
     return { code: 0, text: [`${report.verdict.level.toUpperCase()}: ${report.verdict.text}`, ...report.summary.map((s) => `- ${s}`)].join("\n"), data: m };
   }
   if (sub === "measure") {
-    const { m, report } = await shaped(ctx);
+    const { m, gates, report } = await shaped(ctx);
     const plan = new WritePlan(ctx.repo).write(`${DIR}/${m.date}.json`, jsonText(m));
     const out = planReport(plan, "sigma", report);
     const applied = plan.apply({ confirm: ctx.confirm });
-    if (applied.applied) await notifyPulse(ctx.repo, "sigma.snapshot", sigmaPulse(m));
+    if (applied.applied) await notifyPulse(ctx.repo, "sigma.snapshot", sigmaPulse(m, gates));
     return { code: 0, text: [`${report.verdict.level.toUpperCase()}: ${report.verdict.text}`, describePlan(plan, applied.applied), ...out.problems.map((p) => `  - wording: ${p}`)].join("\n"), data: { applied: applied.applied, measurement: m, paths: out.paths, problems: out.problems } };
   }
   throw usage("sigma takes: measure, status, gate, override.");
