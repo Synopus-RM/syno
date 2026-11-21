@@ -7,7 +7,7 @@ Syno keeps a project's record, plans and tasks, checks its quality, law and secu
 ## Install
 
 ```bash
-claude plugin marketplace add rishimurugan-synopus/syno
+claude plugin marketplace add Synopus-RM/syno
 claude plugin install syno@synopus
 ```
 

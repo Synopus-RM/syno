@@ -810,7 +810,7 @@ Every flow follows the same rule: Syno shows a preview, the owner answers, and S
 
 **Flow H: install and migrate** *(new)*
 
-1. The owner runs `claude plugin marketplace add rishimurugan-synopus/syno`, then `claude plugin install syno@synopus`.
+1. The owner runs `claude plugin marketplace add Synopus-RM/syno`, then `claude plugin install syno@synopus`.
 2. The first session's brief says Syno found the standalone installs and suggests `/syno:migrate`.
 3. Migrate shows what it will move, moves it after a yes, and runs the self-test.
 4. When the self-test passes, it prints the uninstall steps for the old plugins and the claude.ai skills.
@@ -1123,10 +1123,10 @@ Free and MIT-licensed. No plans, trial or payment gateway. A paid tier, if ever,
 
 ## 15. Distribution, migration and release plan *(changed in 0.2)*
 
-Syno is published in Synopus's public GitHub repository `rishimurugan-synopus/syno`, which is also its marketplace. Installing at user scope makes it available in every project on the machine:
+Syno is published in Synopus's public GitHub repository `Synopus-RM/syno`, which is also its marketplace. Installing at user scope makes it available in every project on the machine:
 
 ```bash
-claude plugin marketplace add rishimurugan-synopus/syno
+claude plugin marketplace add Synopus-RM/syno
 claude plugin install syno@synopus
 ```
 
@@ -1188,7 +1188,7 @@ The self-test (`node test/selftest.js`) proves every acceptance criterion on fix
 Defaults chosen during the brainstorms, all marked assumed.
 
 - Only Syno Pulse's code opens network connections. (assumed)
-- The repository is public, `rishimurugan-synopus/syno`, MIT, with marketplace name `synopus`, so users install `syno@synopus`. (assumed, from PRD 0.1)
+- The repository is public, `Synopus-RM/syno`, MIT, with marketplace name `synopus`, so users install `syno@synopus`. (assumed, from PRD 0.1)
 - Every function, including those built from akmo-app-sync and workload-governor, is authored by Synopus under MIT. prompt-master keeps its original copyright line. (assumed)
 - The plugin is built in `~/Downloads/Claude Cowork/Claude/syno/`, next to workload-governor. (assumed, from PRD 0.1)
 - Node 18+ and git 2.25+; Python 3.9+ for Devices and Test. (assumed)
@@ -1228,6 +1228,6 @@ Defaults chosen during the brainstorms, all marked assumed.
 
 | Date | Change |
 | --- | --- |
-| 2026-11-21 | PRD 0.3. Syno Console (S-17): a project as a tree of cloud sessions, with checked merges up, one decision register and number map, a guard and a cloud copy for projects. Defaults follow the session structure the owner approved for Akmo Books; questions go to the Console by default (`askAt`). AC-CN.1 to AC-CN.10. |
+| 2026-11-21 | PRD 0.3. Syno Console (S-17): a project as a tree of cloud sessions, with checked merges up, one decision register and number map, a guard and a cloud copy for projects. Defaults follow the session structure the owner approved for Akmo Books; questions go to the Console by default (`askAt`). AC-CN.1 to AC-CN.10. The repository moved from `rishimurugan-synopus/syno` to `Synopus-RM/syno`; install commands, the plugin's homepage and the marketplace Syno Pulse writes now name the new address. |
 | 2026-10-30 | PRD 0.2. Syno becomes one plugin with 16 functions. The version controller becomes Syno Chronicle (CH-01 to CH-14, were F-01 to F-14). Synopus Insider becomes Syno Pulse, without the PM approval step or replies. Ten existing tools merged and renamed; Pause, Sigma, 5S, Compliance and Security added. Six Sigma (DMAIC, measurements, gates) and 5S shape every function. Shared report look: verdict first, plain English, Sky Glass, HTML plus Markdown. |
 | 2026-10-29 | PRD 0.1 drafted from the build prompt and the brainstorm. Renamed Project Chronicle to Syno; publisher Synopus. |

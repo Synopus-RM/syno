@@ -7,8 +7,8 @@
     "name": "Synopus",
     "url": "https://www.synopus.in"
   },
-  "homepage": "https://github.com/rishimurugan-synopus/syno",
-  "repository": "https://github.com/rishimurugan-synopus/syno",
+  "homepage": "https://github.com/Synopus-RM/syno",
+  "repository": "https://github.com/Synopus-RM/syno",
   "license": "MIT",
   "keywords": ["changelog", "releases", "progress", "tasks", "audit", "six-sigma", "5s", "compliance", "security", "workload", "pulse"]
 }

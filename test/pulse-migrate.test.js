@@ -37,7 +37,7 @@ test("AC-PU.8 an Insider project moves to .syno/pulse.json only after a yes", ()
   assert.equal(moved.projectKey, OLD.projectKey);
   const settings = JSON.parse(readFileSync(join(repo, ".claude", "settings.json"), "utf8"));
   assert.deepEqual(settings.enabledPlugins, { "other@x": true, "syno@synopus": true });
-  assert.equal(settings.extraKnownMarketplaces.synopus.source.repo, "rishimurugan-synopus/syno");
+  assert.equal(settings.extraKnownMarketplaces.synopus.source.repo, "Synopus-RM/syno");
   assert.equal(JSON.parse(readFileSync(join(home, "config", "config.json"), "utf8")).enrolmentKey, KEY);
   assert.ok(existsSync(join(repo, ".claude", "insider.json")), "the old marker is left for the owner");
 });
