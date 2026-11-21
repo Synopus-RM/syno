@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Synopus-RM/syno/schemas/console-node.schema.json",
+  "title": "Syno Console node (.syno/console/nodes/<id>.json), written by the node's parent",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "id",
+    "level",
+    "name",
+    "ref",
+    "parentId",
+    "sessionId",
+    "branch",
+    "parentBranch",
+    "lane",
+    "status",
+    "createdAt",
+    "mergedAt",
+    "mergeCommit",
+    "headCommit",
+    "archivedAt",
+    "deliveries"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9]{0,5}(\\.M[A-Z0-9]{1,8}(\\.T[A-Z0-9]{1,8})?)?$",
+      "patternHint": "a node ID like A, A.M1 or A.M1.T1"
+    },
+    "level": {
+      "enum": [
+        "phase",
+        "milestone",
+        "task"
+      ]
+    },
+    "name": {
+      "type": "string",
+      "maxLength": 48
+    },
+    "ref": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "parentId": {
+      "type": "string",
+      "pattern": "^(console|[A-Z][A-Z0-9]{0,5}(\\.M[A-Z0-9]{1,8}(\\.T[A-Z0-9]{1,8})?)?)$",
+      "patternHint": "console or a node ID"
+    },
+    "sessionId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "branch": {
+      "type": "string"
+    },
+    "parentBranch": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "lane": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "enum": [
+        "planned",
+        "running",
+        "handed-off",
+        "merged",
+        "archived",
+        "rework",
+        "stopped"
+      ]
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "mergedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "mergeCommit": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "headCommit": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "archivedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "deliveries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "merge",
+          "at"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "merge": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  }
+}

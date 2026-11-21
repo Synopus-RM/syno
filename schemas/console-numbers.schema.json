@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Synopus-RM/syno/schemas/console-numbers.schema.json",
+  "title": "Syno Console number series (.syno/console/numbers/<series>.json), written by the Console only",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "series",
+    "next",
+    "blocks"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "series": {
+      "type": "string",
+      "minLength": 1
+    },
+    "next": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "blocks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "to",
+          "from",
+          "until",
+          "at"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "to": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9]{0,5}(\\.M[A-Z0-9]{1,8}(\\.T[A-Z0-9]{1,8})?)?$",
+            "patternHint": "a node ID like A, A.M1 or A.M1.T1"
+          },
+          "from": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "until": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "at": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      }
+    }
+  }
+}

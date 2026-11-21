@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Synopus-RM/syno/schemas/console-decision.schema.json",
+  "title": "Syno Console decision (.syno/console/decisions/D-nnnn.json), written by the Console only and never edited",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "id",
+    "scope",
+    "question",
+    "options",
+    "chosen",
+    "reason",
+    "questionId",
+    "askedBy",
+    "decidedAt",
+    "supersedes",
+    "by"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^D-\\d{4,}$",
+      "patternHint": "a decision ID like D-0001"
+    },
+    "scope": {
+      "type": "string"
+    },
+    "question": {
+      "type": "string",
+      "minLength": 1
+    },
+    "options": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "chosen": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "questionId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "askedBy": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "decidedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "supersedes": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^D-\\d{4,}$"
+    },
+    "by": {
+      "const": "owner"
+    }
+  }
+}

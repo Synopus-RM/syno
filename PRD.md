@@ -1,7 +1,9 @@
 # PRD — Syno
 
-PRD 0.2 · 2026-10-30 · Owner: Synopus · Status: Draft
+PRD 0.3 · 2026-11-21 · Owner: Synopus · Status: Draft
 Live, editable copy: https://claude.ai/artifact/1jALqwFo1TFHLrwAKMmZNi
+
+> **What changed in 0.3 (2026-11-21).** A 17th function, **Syno Console** (S-17, section 6.18), runs a project as a tree of Claude Code cloud sessions: one Console, then phase, milestone and task sessions, with checked merges up, one decision register, one number map and a guard. Its design, approved by the owner, is `docs/superpowers/specs/2026-11-21-syno-console-design.md`. Sections marked *(new in 0.3)* or *(changed in 0.3)* differ from PRD 0.2.
 
 > **What changed in 0.2 (2026-10-30).** Syno is no longer only a version controller. It is one Claude Code plugin from Synopus that holds 16 functions, all named "Syno ___". The version controller from PRD 0.1 is now **Syno Chronicle** (section 6.1), with its 14 features kept. Synopus Insider becomes **Syno Pulse**, and the panel's approval step is removed. Six Sigma and 5S now shape every function. Sections marked *(new in 0.2)* or *(changed in 0.2)* differ from PRD 0.1.
 
@@ -33,6 +35,7 @@ Live, editable copy: https://claude.ai/artifact/1jALqwFo1TFHLrwAKMmZNi
 | Syno 5S | Keeps the project's files sorted, clean and consistent | `/syno:5s` | New |
 | Syno Compliance | Checks the idea and PRD against the laws that apply | `/syno:compliance` | New |
 | Syno Security | Designs out misuse and checks the code for weaknesses | `/syno:security` | New |
+| Syno Console *(new in 0.3)* | Runs a big project as a tree of cloud sessions, with one place for the owner's questions | `/syno:console` | New |
 
 ## 1. Overview *(changed in 0.2)*
 
@@ -90,6 +93,7 @@ v0.1.0 ships all 16 functions, including all 14 Chronicle features from PRD 0.1,
 | S-14 | Syno 5S | Must | No |
 | S-15 | Syno Compliance | Must | Claude's web search reads official sources |
 | S-16 | Syno Security | Must | No; attack tests reach local hosts only |
+| S-17 | Syno Console | Should | No; Claude's session tools create and message the sessions *(new in 0.3)* |
 | X-01 | Shared report look and language | Must | No |
 | X-02 | One hook dispatcher for every function | Must | No |
 | X-03 | Migration from the standalone plugins and skills | Must | No |
@@ -721,6 +725,70 @@ Section 5.3 is the specification. `scripts/lib/report/` renders every report fro
 
 - AC-XC.1: `/syno:status` in a fresh project opens with a verdict and lists what to do next.
 
+### 6.18 S-17 Syno Console *(new in 0.3)*
+
+Runs a project as a tree of Claude Code cloud sessions: one **Syno Console**, then phase, milestone and task sessions. Each level creates only its own children, so the Claude app shows them nested. Work moves up one level at a time through checked merges. Questions move up to one agreed place, and the owner answers there only. DMAIC steps: Define (the tree, rules, briefs) and Control (checked merges, one register, the guard). The approved design is `docs/superpowers/specs/2026-11-21-syno-console-design.md`.
+
+1. **Levels and names.**
+   - Titles `Syno Console`, `PhA · Phase A`, `PhA·M1 · <name>` and `PhA·M1·T1 · <name>`.
+   - Branches `claude/syno-phase-a`, `claude/syno-pha-m1` and `claude/syno-pha-m1-t1`.
+   - Tags `syno`, `syno-level:<level>`, `syno-id:<id>` and `syno-project:<slug>`.
+   - All of these can be changed in `console.names` and `console.branches`. A template that would give two IDs the same branch is refused.
+2. **Creating the tree.** `syno console spawn` checks the level, the limits and the lanes, then prints the exact `create_session` parameters:
+   - title and tags
+   - `permission_mode: "auto"`
+   - the repository, starting from the parent's branch
+   - the child's own branch
+   - the role card (`append_system_prompt`)
+   - the brief (`prompt`)
+
+   At most `limits.maxTasks` (3) tasks run per milestone, only with separate lanes (shared files excepted). At most `limits.maxMilestones` (2) milestones run per phase. Phases open only when the owner asks.
+3. **Role card.** Every child carries its rules in its system prompt, so it needs nothing installed. The card opens with `SYNO ROLE CARD` and is at most 6 KB. It holds:
+   - who it is, its parent and the Console
+   - the join command
+   - the order of authority: owner's decisions, rulebook, `CLAUDE.md`, card, brief
+   - the question rule
+   - its duties, messages, handoff and "never" list
+   - the standing rules
+4. **Questions** (`console.askAt`).
+   - `"console"` (the default): only the Console asks the owner, and the phase frames each question.
+   - `"phase"`: a phase asks about its own phase and sends the Console a `DECISION` line.
+
+   Structure questions are always the Console's. Every question climbs one level at a time. Each level answers it from the register if it can. The level that asks uses AskUserQuestion, recommended option first.
+5. **Decisions and numbers.** Only the Console writes decisions (`D-nnnn`, never edited, a newer one supersedes), rules (`R-nnnn`), questions and number blocks. It hands blocks out in advance (`console.numbers`, for example ADR). The register page (`console.register`) is generated, and a hand-written one is never overwritten.
+6. **Checked merges.** A child merges its parent's latest branch, runs its checks and hands off. The parent then:
+   1. fetches and runs `syno console verify`, which reads only. It gives Green, Amber (needs sync, outside the lane, the head differs from the report) or Red (Console records, or records outside the child's subtree, changed).
+   2. merges with `--no-ff`
+   3. runs the checks
+   4. records with `syno console record --status merged`
+   5. pushes, and only then archives the child.
+
+   With `console.rolling`, each finished task goes up the chain at once, and each level merges down after each consolidation.
+7. **Standing rules.** At `start` the owner approves R-0001 to R-0012. They are the owner's standing yes for the routine steps of the tree: creating children within the limits, pushing a session's own branch, checked merges, records of one's own children, and archiving after a merge. Syno's code still never pushes, fetches, merges or creates sessions. Claude does those steps, inside these rules. Only the owner merges into the default branch, from one combined draft PR.
+8. **Guard.** It runs in the hook dispatcher, and in the cloud copy's own hook. Below the Console it refuses:
+   - the question dialog and plan mode (`askAt` allowing)
+   - a push to any branch but the session's own, a force-push, a branch delete, pushing every branch, and tags
+   - a session of the wrong level, without auto mode or without a role card
+   - archiving a child that isn't recorded as merged
+   - merging pull requests, at every level
+   - edits to the Console's records (cloud copy)
+
+   Outside a tree it does nothing, and it fails open.
+9. **Records** in `.syno/console/`: `nodes/<id>.json`, `reports/<id>.md`, `decisions/`, `rules/`, `questions/` and `numbers/`. Each has one writer and a schema in `schemas/console-*.schema.json`. Each session's role is in `.syno/local/console/role.json`, which git ignores.
+10. **Cloud copy.** Cloud sessions can't load the owner's plugins. `syno console install` copies the skill and its script into `.claude/skills/syno-console/` and adds the guard and brief hooks to `.claude/settings.json`, keeping every other key. `install --check` reports a stale or edited copy. The plugin's handler stays quiet where the cloud copy's hook is present.
+11. **Syno Tasks, Sigma, Pulse.** When the Console merges a delivery, it marks each merged task that has a `ref` done with `syno tasks set <ref> done`, which runs the done gate. There are no new Sigma defect types and no new Pulse events in 0.3. Task updates reach Pulse as the usual `tasks.snapshot` where Pulse is set up.
+
+- AC-CN.1: IDs, titles, branches and tags follow item 1 and the configured templates; invalid, reserved or ambiguous IDs are refused.
+- AC-CN.2: A role card has the marker, the order of authority, every standing rule, the parent and the Console, and fits in 6 KB.
+- AC-CN.3: `spawn` refuses a wrong level, a fourth running task, an overlapping lane (shared files excepted) and a third running milestone.
+- AC-CN.4: The guard's question and plan-mode rule follows `askAt`, and allows everything outside a Syno tree.
+- AC-CN.5: The guard allows a push only to the session's own branch, and refuses force, delete, `--all`, `--mirror`, `--tags`, other branches and a bare push from another branch.
+- AC-CN.6: The guard lets a session create only its next level (named, in auto mode, with a role card), and archive only a child recorded as merged.
+- AC-CN.7: `verify` answers Green, Amber (needs sync, outside the lane, head mismatch) or Red (protected records), and spots an already-merged child.
+- AC-CN.8: Decisions, rules and number blocks are numbered without gaps or overlaps; only the Console's role writes them.
+- AC-CN.9: `install` keeps other settings keys and is idempotent; `--check` spots an edited copy.
+- AC-CN.10: The dispatcher's console handler stays quiet when the cloud copy is installed, and every guard fails open.
+
 ## 7. User flows *(changed in 0.2)*
 
 Every flow follows the same rule: Syno shows a preview, the owner answers, and Syno writes only on a yes. Flows A to G are from PRD 0.1, with commands renamed.
@@ -806,6 +874,8 @@ Every flow follows the same rule: Syno shows a preview, the owner answers, and S
   reports/                 ignored     HTML and Markdown reports
   sessions/                ignored     Pause resume files
   trash/                   ignored     5S trash, restorable
+  console/                 committed   Syno Console: nodes/, reports/, decisions/, rules/, questions/, numbers/ (S-17, new in 0.3)
+  local/console/role.json  ignored     This session's place in a Syno Console tree
 ```
 
 The Chronicle entities (Idea, Change, Release, Publish, Snapshot) and the Chronicle state are unchanged from PRD 0.1, section 6. New and changed entities follow.
@@ -823,6 +893,7 @@ The Chronicle entities (Idea, Change, Release, Publish, Snapshot) and the Chroni
 | security.localHosts | string[] | Extra local hosts for attack tests, each must end in `.localhost` or `.test` |
 | reports.theme | enum | `sky-glass` in v0.1.0 |
 | locale | string | `en` only in v0.1.0 |
+| console.* | object | Syno Console (new in 0.3): `syno.branch`, `askAt`, `rolling`, `autoMode`, `label`, `names`, `branches`, `limits`, `sharedFiles`, `mergeRecipe`, `rulebook`, `register`, `checks`, `numbers` (section 6.18) |
 
 **Pulse marker** (`pulse.json`)
 
@@ -916,6 +987,7 @@ The Chronicle entities (Idea, Change, Release, Publish, Snapshot) and the Chroni
 | `/syno:compliance [idea\|prd\|release]` | Compliance | Check, PRD edits |
 | `/syno:security [design\|review\|secrets\|deps\|attack]` | Security | Abuse cases, findings |
 | `/syno:migrate` | Migration | Moved settings |
+| `/syno:console [start\|phase\|status\|install]` | Console (new in 0.3) | Config, standing rules, role, node and decision records, cloud copy |
 | `/syno:help` | All | Nothing; lists every function in plain words |
 
 **Skills.** One skill per function in `skills/<name>/SKILL.md`, each with a short description so all 16 together stay under about 3,000 tokens per session. Each skill names its DMAIC step, follows the owner-decides rule and the shared report look, and ends with Control (record, measure, report, send).
@@ -937,7 +1009,7 @@ The Chronicle entities (Idea, Change, Release, Publish, Snapshot) and the Chroni
 
 ## 10. Security and permissions *(changed in 0.2)*
 
-**Decisions only the owner makes.** PRD 0.1's list stays (versions, dates, cutting and yanking releases, idea status, imports, CHANGELOG writes, overwriting hand edits, manifest bumps, local tags). Added in 0.2: gate overrides, Pulse enable and join, 5S moves and removals, running a formatter or audit tool, attack tests, builds, pushes and workflow runs, PRD edits from Compliance, and migration moves.
+**Decisions only the owner makes.** PRD 0.1's list stays (versions, dates, cutting and yanking releases, idea status, imports, CHANGELOG writes, overwriting hand edits, manifest bumps, local tags). Added in 0.2: gate overrides, Pulse enable and join, 5S moves and removals, running a formatter or audit tool, attack tests, builds, pushes and workflow runs, PRD edits from Compliance, and migration moves. Added in 0.3: the Syno branch and `askAt` at Syno Console's start, opening each phase, and every answer the Console records as a decision. The standing rules approved at start cover the tree's routine steps (section 6.18, item 7).
 
 **Never, in any mode**
 
@@ -1001,12 +1073,14 @@ syno/
   commands/                         one file per command in section 9
   skills/                           chronicle, pulse, progress, tasks, audit, devices, devices-desktop,
                                     devices-mobile, devices-release, test, parallel, plan, prompt,
-                                    governor (device-aware-work), pause, sigma, 5s, compliance, security
+                                    governor (device-aware-work), pause, sigma, 5s, compliance, security,
+                                    console (its scripts/ run in the plugin and in a project's cloud copy)
   hooks/hooks.json                  every event → scripts/hooks/run.js
   scripts/syno.js                   CLI entry
   scripts/hooks/run.js              dispatcher
   scripts/lib/                      git, run, fsutil, schema, semver, redact, report/*, strings/en.json,
-                                    chronicle/*, pulse/*, sigma/*, fives/*, compliance/*, security/*, pause/*
+                                    chronicle/*, pulse/*, sigma/*, fives/*, compliance/*, security/*, pause/*,
+                                    console/* (CLI route, install, hook handler)
   scripts/governor/                 ported gov.js, lib/ and bin/gov
   scripts/python/                   ported Devices and Test scripts
   mcp/pulse-server.mjs              ported report_update server
@@ -1153,5 +1227,6 @@ Defaults chosen during the brainstorms, all marked assumed.
 
 | Date | Change |
 | --- | --- |
+| 2026-11-21 | PRD 0.3. Syno Console (S-17): a project as a tree of cloud sessions, with checked merges up, one decision register and number map, a guard and a cloud copy for projects. Defaults follow the session structure the owner approved for Akmo Books; questions go to the Console by default (`askAt`). AC-CN.1 to AC-CN.10. |
 | 2026-10-30 | PRD 0.2. Syno becomes one plugin with 16 functions. The version controller becomes Syno Chronicle (CH-01 to CH-14, were F-01 to F-14). Synopus Insider becomes Syno Pulse, without the PM approval step or replies. Ten existing tools merged and renamed; Pause, Sigma, 5S, Compliance and Security added. Six Sigma (DMAIC, measurements, gates) and 5S shape every function. Shared report look: verdict first, plain English, Sky Glass, HTML plus Markdown. |
 | 2026-10-29 | PRD 0.1 drafted from the build prompt and the brainstorm. Renamed Project Chronicle to Syno; publisher Synopus. |

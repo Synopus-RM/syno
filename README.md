@@ -34,6 +34,7 @@ To try a local copy without installing: `claude --plugin-dir ./syno`.
 | Syno Devices | Keeps desktop and mobile apps matched to the web app | `/syno:devices` |
 | Syno Test | Writes a test guide anyone can follow, with Pass and Fail buttons | `/syno:test` |
 | Syno Parallel | Finishes the remaining work with several agents at once | `/syno:parallel` |
+| Syno Console | Runs a big project as a tree of cloud sessions (phases, milestones, tasks) that hand work up through checked merges, with one place for your questions. `/syno:console install` gives a project's cloud sessions the same rules | `/syno:console` |
 | Syno Plan | Brainstorms an idea and writes the PRD | `/syno:plan` |
 | Syno Prompt | Writes better prompts for AI tools | `/syno:prompt` |
 | Syno Governor | Keeps heavy work within what this computer can handle | `/syno:governor` |
