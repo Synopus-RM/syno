@@ -1,5 +1,5 @@
 {
-  "description": "Syno: one dispatcher for every function's hooks. A short project brief at session start (Chronicle, Pulse, Pause, 5S, Governor), the Governor's gate in front of heavy Bash commands, and Pulse reporting in projects enabled with /syno:pulse enable. Every hook fails open.",
+  "description": "Syno: one dispatcher for every function's hooks. A short project brief at session start (Chronicle, Pulse, Pause, 5S, Governor, Console), the Governor's gate in front of heavy Bash commands, Syno Console's guard in a session tree, and Pulse reporting in projects enabled with /syno:pulse enable. Every hook fails open.",
   "hooks": {
     "SessionStart": [
       { "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/run.js\" SessionStart", "timeout": 20 }] }
@@ -11,6 +11,10 @@
       {
         "matcher": "Bash",
         "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/run.js\" PreToolUse", "timeout": 15 }]
+      },
+      {
+        "matcher": "AskUserQuestion|EnterPlanMode|ExitPlanMode|mcp__.*__create_session|mcp__.*__archive_session|mcp__.*__merge_pull_request",
+        "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/run.js\" PreToolUse", "timeout": 10 }]
       }
     ],
     "PostToolUse": [

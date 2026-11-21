@@ -28,6 +28,7 @@ export const FUNCTIONS = {
   status: "./lib/status/cli.js",
   doctor: "./lib/status/doctor.js",
   migrate: "./lib/migrate/cli.js",
+  console: "./lib/console/cli.js",
 };
 const ALIASES = { "5s": "fives" };
 export const CHRONICLE = new Set(["init", "ignore", "adopt", "idea", "change", "release", "publish", "notes", "snapshot", "structure", "diff", "timeline", "render", "validate", "sync"]);
