@@ -34,6 +34,8 @@ test("AC-CN.2 the question rule follows askAt and the level", () => {
   assert.match(phase, /You ask the owner questions that concern only your phase/);
   assert.match(phase, /DECISION A/);
   assert.match(phase, /the whole repository/);
+  assert.match(phase, /console spawn <id> --name … --lane … --parent-session <your own session ID>/);
+  assert.doesNotMatch(card(), /--parent-session <your own session ID>/, "a task creates no sessions");
 });
 
 test("fill throws on a missing or an unused key", () => {

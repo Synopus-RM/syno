@@ -44,7 +44,7 @@ function duties(level, cfg) {
   const up = level === "phase" ? "the Console" : "your phase";
   const pace = cfg.rolling ? `Hand each merged child up to ${up} at once (rolling); don't wait for the rest.` : `Hand off to ${up} when all your ${kids} are merged.`;
   return [
-    `Plan your ${kids} and run them. Create each one yourself (\`console spawn\`, then create_session with exactly those parameters), so it nests under you in the app; ${limit}. If you can't create sessions, send the request to your parent.`,
+    `Plan your ${kids} and run them. Create each one yourself, so it nests under you in the app: \`console spawn <id> --name … --lane … --parent-session <your own session ID>\` (get_session with no ID shows it), then create_session with exactly the printed parameters, then \`console record <id> --status running --session <its ID> --confirm\`; ${limit}. If you can't create sessions, send the request to your parent.`,
     `When a child hands off: git fetch origin <its branch>, \`console verify <id>\`, merge --no-ff, reconcile shared files with the merge recipe, run the checks, \`console record <id> --status merged --merge <sha> --confirm\`, commit, push. Archive the child only after that, then send [SYNO sync] to your running children.`,
     pace,
   ].join("\n");
