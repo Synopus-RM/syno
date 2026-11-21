@@ -111,3 +111,17 @@ test("S-17 twelve standing rules, numbered R-0001 to R-0012", () => {
   assert.deepEqual(STANDING_RULES.map((r) => r.id), Array.from({ length: 12 }, (_, i) => `R-${String(i + 1).padStart(4, "0")}`));
   for (const r of STANDING_RULES) assert.ok(r.text.length > 20, r.id);
 });
+
+test("review: an ancestor may create a descendant on its child's behalf, counted under that child", () => {
+  const ph = { level: "phase", id: "A" };
+  const nodes = [node("A.M1", "running"), ...["T1", "T2", "T3"].map((t) => node(`A.M1.${t}`, "running", [`src/${t}/**`]))];
+  const full = checkSpawn({ role: ph, childId: "A.M1.T4", lane: ["src/t4/**"], nodes, cfg });
+  assert.equal(full.ok, false);
+  assert.match(full.reasons.join(" "), /3 tasks/);
+  assert.equal(checkSpawn({ role: ph, childId: "A.M1.T4", lane: ["src/t4/**"], nodes: nodes.slice(0, 2), cfg }).ok, true);
+  const noParent = checkSpawn({ role: ph, childId: "A.M2.T1", lane: [], nodes: [], cfg });
+  assert.equal(noParent.ok, false);
+  assert.match(noParent.reasons.join(" "), /A\.M2 isn't running/);
+  assert.equal(checkSpawn({ role: { level: "console", id: "console" }, childId: "A.M1.T9", lane: ["x/**"], nodes: nodes.slice(0, 2), cfg }).ok, true);
+  assert.equal(checkSpawn({ role: { level: "milestone", id: "A.M1" }, childId: "A.M2.T1", lane: [], nodes, cfg }).ok, false);
+});

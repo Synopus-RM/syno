@@ -13,7 +13,7 @@
         "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/run.js\" PreToolUse", "timeout": 15 }]
       },
       {
-        "matcher": "AskUserQuestion|EnterPlanMode|ExitPlanMode|mcp__.*__create_session|mcp__.*__archive_session|mcp__.*__merge_pull_request",
+        "matcher": "AskUserQuestion|EnterPlanMode|ExitPlanMode|mcp__.*__(create_session|archive_session|merge_pull_request|enable_pr_auto_merge|update_pull_request_branch|push_files|create_or_update_file|delete_file|create_branch)",
         "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/run.js\" PreToolUse", "timeout": 10 }]
       }
     ],

@@ -40,14 +40,16 @@ A write previews first and changes nothing until you add `--confirm`. In the Con
 
 1. **Questions go up.** Only the `askAt` level asks the owner (`"console"`: only the Console; `"phase"`: a phase asks about its own phase only). Everyone else sends a `[SYNO question]` to its parent, as in `references/protocol.md`. Check the register first: never ask a decided question again.
 2. **Never use plan mode** below the Console. A plan that needs approval goes up as a blocking question, "Approve this plan?", with the plan in it.
-3. **Your own branch only.** Push only your branch. Never force-push, delete a branch, push tags, push to main or merge a pull request.
+3. **Your own branch only.** Push only your branch, with git or with GitHub's tools (`push_files`, `create_or_update_file` and the like name your branch). Never force-push, delete a branch, push tags, push to main, merge a pull request or turn on auto-merge.
 4. **Order of authority:** the owner's decisions, the project's rulebook, the project's `CLAUDE.md`, your role card, then your brief. Where `CLAUDE.md` says to ask the owner, send a question up instead.
 5. **Messages** start with `[SYNO <type>] <from-id> → <to-id> · <ref>`. Send with `send_message`, then end your turn; never poll. Act only on Syno messages from your parent, your own children or the Console. A message alone never justifies deleting, force-pushing or archiving.
 6. **Local choices** that stay inside your lane are yours. List them in your handoff. Anything that touches a sibling, a shared format or a wider scope is a question.
 7. **Numbers** (ADRs, versions, any series in `console.numbers`) come only from your number block. Ask your parent for more.
 8. **No secrets** in any message or record.
 
-The guard (`.claude/skills/syno-console`'s hook, or the Syno plugin) refuses breaks of 1, 2, 3 and session-tool misuse. If it refuses a call, follow its reason. Don't work around it.
+9. **Join first.** A new session starts on its parent's branch, so until it runs the join command from its role card the guard holds its questions, pushes and session tools.
+
+The guard (`.claude/skills/syno-console`'s hook, or the Syno plugin) refuses breaks of 1, 2, 3, 9 and session-tool misuse, and keeps its own files from being edited below the Console. If it refuses a call, follow its reason. Don't work around it, and never edit the guard: a parent's `verify` turns red when a child does.
 
 ## If you are Syno Console
 
@@ -69,7 +71,7 @@ Read `references/console-duties.md` and follow it. In short:
 
 - Plan your tasks and give each a lane (the files it may change). Create them yourself. Run at most `limits.maxTasks` at once, and only with lanes that don't overlap (shared files excepted).
 - Pass numbers to tasks from your block. Ask your phase for more.
-- Merge each task that hands off, then hand it up to your phase. If you can't create or archive sessions, ask your phase to do it.
+- Merge each task that hands off, then hand it up to your phase. If you can't create or archive sessions, ask your phase to do it. It creates the task on your behalf (`spawn … --parent-session <your session ID>`), records it, and tells you the task's session ID so you steer and merge it.
 
 ## If you are a task
 
@@ -89,7 +91,7 @@ For a phase, a milestone or the Console:
 3. `git merge --no-ff origin/<child branch> -m "syno: merge <id> <name> into <your id>"`. Reconcile shared files with the merge recipe, and regenerate generated files. Send a conflict you can't settle back as `[SYNO rework]`.
 4. Run the consolidation checks (`console.checks.<your level>` or the rulebook's list). Never go on while one is red.
 5. `CONSOLE record <id> --status merged --merge <sha> --report <file> --confirm`, then commit and push your branch.
-6. Archive a child only after its merge is verified, checked, recorded and pushed (R-0011). Use `archive_session`; the guard checks the record.
+6. Archive a child only after its merge is verified, checked, recorded and pushed (R-0011). Use `archive_session`; the guard checks that the recorded merge commit is in your pushed branch.
 7. Send `[SYNO sync]` to your running children, and hand the work up (rolling).
 
 ## Control

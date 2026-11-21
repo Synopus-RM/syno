@@ -1,7 +1,7 @@
 // Syno Console's status view (PRD S-17, design 5.9): the session tree drawn
 // from node records, opening with a verdict a non-technical reader gets in one
 // read. Pure: records and live session states come in as data.
-import { namesFor } from "./model.mjs";
+import { namesFor, parseId } from "./model.mjs";
 
 const WORDS = { planned: "Planned", running: "Running", "handed-off": "Handed off, waiting for merge", merged: "Merged", archived: "Archived", rework: "Rework", stopped: "Stopped" };
 const LIVE = { working: "Working", blocked: "Blocked", review_ready: "Idle", completed: "Done", failed: "Failed" };
@@ -34,7 +34,13 @@ function verdictOf(nodes, openQs, live) {
 }
 
 /** { verdict, text } for /syno:console status. `live` maps session IDs to status buckets. */
-export function renderTree({ nodes = [], questions = [], cfg, live = {} }) {
+export function renderTree({ nodes: all = [], questions = [], cfg, live = {}, skipped = [] }) {
+  // A hand-written record without a node ID (or naming the Console) can't sit in the tree.
+  const nodes = all.filter((n) => {
+    const p = parseId(String(n?.id ?? ""));
+    return p && p.level !== "console" && p.id === n.id;
+  });
+  const unusable = [...skipped, ...all.filter((n) => !nodes.includes(n)).map((n) => `a node record without a valid ID (${String(n?.id ?? "none")})`)];
   const openQs = questions.filter((q) => q.status === "open");
   const shown = nodes.filter((n) => n.status !== "archived");
   const children = (parentId) => shown.filter((n) => n.parentId === parentId).sort(byId);
@@ -51,5 +57,6 @@ export function renderTree({ nodes = [], questions = [], cfg, live = {} }) {
   const verdict = verdictOf(nodes, openQs, live);
   const archived = nodes.length - shown.length;
   const consoleTitle = namesFor("console", "", cfg).title;
-  return { verdict, text: [verdict, consoleTitle, ...lines, ...(archived ? [`(${archived} archived)`] : [])].join("\n") };
+  const notes = [...(archived ? [`(${archived} archived)`] : []), ...(unusable.length ? [`Skipped unreadable records: ${unusable.join(", ")}`] : [])];
+  return { verdict, text: [verdict, consoleTitle, ...lines, ...notes].join("\n") };
 }

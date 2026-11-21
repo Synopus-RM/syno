@@ -53,6 +53,12 @@ function roleRecord(root, role, now) {
   return { ...role, joinedAt: same ? old.joinedAt : iso(now) };
 }
 
+/** Every ID a record folder holds, readable or not, so a number is never reused. */
+function taken(root, kind) {
+  const { records, skipped } = listRecords(root, kind);
+  return [...records, ...skipped.map((p) => ({ id: p.split("/").pop().replace(/\.json$/, "") }))];
+}
+
 export function activeRules(root) {
   const { records } = listRecords(root, "rules");
   const replaced = new Set(records.map((r) => r.supersedes).filter(Boolean));
@@ -79,7 +85,7 @@ export function join(ctx) {
 
 export function start(ctx) {
   const { flags, cfg, root, role, now } = ctx;
-  if (role && role.level !== "console" && !role.inferred) throw refusal(`Refused: this session is ${role.id}. start belongs in the Syno Console session.`);
+  if (role && role.level !== "console") throw refusal(`Refused: this checkout belongs to ${role.id}. start belongs in the Syno Console session.`);
   const branch = flags.branch ?? cfg.syno?.branch ?? currentBranch(root);
   if (!branch) throw usage("Pass --branch <the Syno branch>, the branch the Console collects every phase into.");
   if (flags["ask-at"] && !["console", "phase"].includes(flags["ask-at"])) throw usage("--ask-at is console or phase.");
@@ -122,8 +128,10 @@ export function record(ctx) {
   const old = records.find((n) => n.id === id);
   const names = namesFor(id, flags.name ?? old?.name ?? "", cfg);
   if (!role) throw refusal("Refused: this session has no Syno Console role. Run join (or start, in the Console) first.");
-  if (role.id !== names.parentId) throw refusal(`Refused: only ${names.parentId}, the parent, records ${id}. This session is ${role.id}.`);
+  const ancestor = role.level === "console" || id.startsWith(`${role.id}.`);
+  if (role.inferred || !ancestor) throw refusal(`Refused: only ${names.parentId}, the parent (or an ancestor on its behalf), records ${id}. This session is ${role.id}${role.inferred ? " and hasn't joined yet" : ""}.`);
   if (!STATUSES.includes(need(flags, "status", `<${STATUSES.join("|")}>`))) throw usage(`--status is one of ${STATUSES.join(", ")}.`);
+  if (["merged", "archived"].includes(flags.status) && !(flags.merge ?? old?.mergeCommit)) throw usage(`A ${flags.status} record needs --merge <the merge commit>, so the archive guard can prove it is pushed.`);
   const plan = new Plan(root).write(`${RECORDS_DIR}/nodes/${id}.json`, jsonText(nodeRecord(names, old, flags, ctx.now)));
   if (typeof flags.report === "string") {
     const text = readText(resolve(ctx.cwd, flags.report));
@@ -141,7 +149,7 @@ export function decide(ctx) {
   if (!String(input.question ?? "").trim() || !String(input.chosen ?? "").trim()) throw usage("A decision needs question and chosen.");
   const decisions = listRecords(ctx.root, "decisions").records;
   if (input.supersedes && !decisions.some((d) => d.id === input.supersedes)) throw usage(`${input.supersedes} isn't a recorded decision.`);
-  const id = nextNumber(decisions, "D");
+  const id = nextNumber(taken(ctx.root, "decisions"), "D");
   const rec = {
     schemaVersion: 1, id, scope: input.scope ?? "project", question: String(input.question), options: Array.isArray(input.options) ? input.options.map(String) : [],
     chosen: String(input.chosen), reason: input.reason ?? null, questionId: input.questionId ?? null, askedBy: input.askedBy ?? null,
@@ -160,7 +168,7 @@ export function rule(ctx) {
   const rules = listRecords(ctx.root, "rules").records;
   const supersedes = ctx.flags.supersedes ?? null;
   if (supersedes && !rules.some((r) => r.id === supersedes)) throw usage(`${supersedes} isn't a recorded rule.`);
-  const rec = { schemaVersion: 1, id: nextNumber(rules, "R"), text, scope: ctx.flags.scope ?? "project", since: day(ctx.now), supersedes };
+  const rec = { schemaVersion: 1, id: nextNumber(taken(ctx.root, "rules"), "R"), text, scope: ctx.flags.scope ?? "project", since: day(ctx.now), supersedes };
   const plan = new Plan(ctx.root).write(`${RECORDS_DIR}/rules/${rec.id}.json`, jsonText(rec));
   const replaced = new Set([...rules.map((r) => r.supersedes), supersedes].filter(Boolean));
   writePage(plan, ctx.root, ctx.cfg.rulebook, rulebookPage(ctx.cfg, [...rules, rec].filter((r) => !replaced.has(r.id)).sort(byId)));
@@ -172,7 +180,7 @@ export function question(ctx) {
   const input = readInput(ctx);
   const from = parseId(String(input.from ?? ""))?.id;
   if (!from || !String(input.text ?? "").trim()) throw usage("A question needs from (the asking session's ID) and text.");
-  const mine = listRecords(ctx.root, "questions").records.filter((q) => String(q.id).startsWith(`Q-${from}-`));
+  const mine = taken(ctx.root, "questions").filter((q) => String(q.id).startsWith(`Q-${from}-`));
   const nn = mine.reduce((m, q) => Math.max(m, Number(/-(\d+)$/.exec(q.id)?.[1] ?? 0)), 0) + 1;
   const rec = { schemaVersion: 1, id: `Q-${from}-${String(nn).padStart(2, "0")}`, from, path: Array.isArray(input.path) ? input.path : [], text: String(input.text), options: Array.isArray(input.options) ? input.options.map(String) : [], blocking: input.blocking === true, status: "open", decision: null, receivedAt: iso(ctx.now) };
   const plan = new Plan(ctx.root).write(`${RECORDS_DIR}/questions/${rec.id}.json`, jsonText(rec));
@@ -193,6 +201,7 @@ export function numbers(ctx) {
   if (!to || !Number.isInteger(count) || count < 1) throw usage("--to is a node ID and --count a whole number of 1 or more.");
   const rel = `${RECORDS_DIR}/numbers/${series}.json`;
   const old = readJson(resolve(ctx.root, rel));
+  if (!old && readText(resolve(ctx.root, rel)) !== null) throw usage(`Syno can't read ${rel}. Fix it from git history first, so no block is handed out twice.`);
   const from = old?.next ?? Number(ctx.flags.start);
   if (!Number.isInteger(from) || from < 0) throw usage(`Pass --start <the first free ${series} number> the first time.`);
   const block = { to, from, until: from + count - 1, at: day(ctx.now) };

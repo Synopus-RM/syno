@@ -91,3 +91,38 @@ test("repository URLs are normalised for create_session", () => {
   assert.equal(normaliseRepoUrl("https://gitlab.example.com/g/r.git"), "https://gitlab.example.com/g/r");
   assert.equal(normaliseRepoUrl(null), null);
 });
+
+test("review: a branch with no shared history is red, not a crash", () => {
+  const { repo } = tree({ "src/t1/a.js": "a\n" });
+  git(repo, "checkout", "-q", "--orphan", "lonely");
+  commit(repo, "orphan", undefined, { "x.txt": "x\n" });
+  git(repo, "update-ref", "refs/remotes/origin/claude/syno-pha-m1-t2", git(repo, "rev-parse", "HEAD"));
+  git(repo, "checkout", "-q", PARENT);
+  const r = verifyChild(repo, { childId: "A.M1.T2", childBranch: "claude/syno-pha-m1-t2", lane });
+  assert.equal(r.verdict, "red");
+  assert.match(r.reasons.join(" "), /no history in common/);
+});
+
+test("review: verify is red when a child switches the guard off or changes the console config", () => {
+  const settings = (hook) => JSON.stringify({ hooks: { PreToolUse: hook ? [{ matcher: "Bash", hooks: [{ type: "command", command: 'node "$CLAUDE_PROJECT_DIR/.claude/skills/syno-console/scripts/console.mjs" guard' }] }] : [] } });
+  const base = (repo) => {
+    commit(repo, "settings", undefined, { ".claude/settings.json": settings(true), ".syno/config.json": JSON.stringify({ console: { askAt: "console" } }) });
+  };
+  const build = (files) => {
+    const repo = initRepo("console-verify-guard");
+    base(repo);
+    git(repo, "checkout", "-q", "-b", PARENT);
+    git(repo, "checkout", "-q", "-b", CHILD);
+    commit(repo, "child", undefined, files);
+    git(repo, "update-ref", `refs/remotes/origin/${CHILD}`, git(repo, "rev-parse", "HEAD"));
+    git(repo, "checkout", "-q", PARENT);
+    return repo;
+  };
+  const check = (files) => verifyChild(build(files), { childId: "A.M1.T1", childBranch: CHILD, lane: [] });
+  assert.match(check({ ".claude/settings.json": settings(false) }).reasons.join(" "), /removes the Syno Console guard/i);
+  assert.equal(check({ ".claude/settings.json": settings(false) }).verdict, "red");
+  assert.equal(check({ ".syno/config.json": JSON.stringify({ console: { askAt: "phase" } }) }).verdict, "red");
+  assert.equal(check({ ".claude/skills/syno-console/scripts/guard.mjs": "// off\n" }).verdict, "red");
+  const keep = JSON.stringify({ ...JSON.parse(settings(true)), env: { A: "1" } });
+  assert.equal(check({ ".claude/settings.json": keep, ".syno/config.json": JSON.stringify({ console: { askAt: "console" }, compliance: {} }) }).verdict, "green");
+});

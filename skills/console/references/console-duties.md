@@ -41,7 +41,7 @@ You are the one session the owner talks to. You organise, set rules, make core s
 ## Deliveries (a phase hands work up)
 
 1. Merge the default branch into the Syno branch first when it has moved. Send `[SYNO sync]` to the phases if it has.
-2. Follow "Merging a child" in `SKILL.md`: fetch, verify, merge, check, then `record <id> --status running --merge <sha> --report <file> --confirm` while the phase keeps going. Use `--status merged` for its final delivery. Then push.
+2. Follow "Merging a child" in `SKILL.md`: fetch, verify, merge, check, then `record <id> --status running --merge <sha> --report <file> --confirm` while the phase keeps going. Use `--status merged --merge <sha>` for its final delivery. Then push.
 3. Keep **one draft PR** from the Syno branch to the default branch. Open it if none is open. Only the owner merges it.
 4. For each merged task that has a `ref`, run `syno tasks set <ref> done` where Syno Tasks is set up. That runs the done gate. If the gate refuses, say why in the report.
 5. Report to the owner in Syno's look:

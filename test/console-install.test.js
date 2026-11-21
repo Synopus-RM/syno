@@ -120,3 +120,9 @@ test("AC-CN.10 the hook process denies a task's question dialog through run.js",
 test("the Governor ignores tools other than Bash", async () => {
   assert.equal(await governorHandle("PreToolUse", { tool_name: "AskUserQuestion", tool_input: {} }, { cwd: tmpdir() }), null);
 });
+
+test("review: the plugin's hook matcher is the guard's plugin matcher", async () => {
+  const { PLUGIN_MATCHER } = await import("../skills/console/scripts/guard.mjs");
+  const hooks = JSON.parse(read(ROOT, "hooks/hooks.json")).hooks.PreToolUse;
+  assert.ok(hooks.some((h) => h.matcher === PLUGIN_MATCHER), "hooks.json carries PLUGIN_MATCHER exactly");
+});

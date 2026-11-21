@@ -12,7 +12,7 @@ import { dirname, join as joinPath, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { briefText, roleCard, spawnParams } from "./cards.mjs";
 import { activeRules, decide, join, list, need, numbers, question, record, rule, start } from "./commands.mjs";
-import { repoUrl, tryGitRead } from "./gitread.mjs";
+import { pushedCheck, repoUrl, tryGitRead } from "./gitread.mjs";
 import { judge } from "./guard.mjs";
 import { checkSpawn, namesFor, refusal, usage } from "./model.mjs";
 import { currentBranch, findRoot, listRecords, loadConfig, readJson, resolveRole } from "./store.mjs";
@@ -41,13 +41,19 @@ export function parseArgs(argv) {
   return { positional, flags };
 }
 
+/** What to tell a session whose role was only worked out from its branch, which may be its parent's. */
+function unjoined(r, cfg) {
+  const n = namesFor(r.id, "", cfg);
+  return `This checkout's branch (${r.branch}) belongs to ${n.title}, but this session hasn't joined its Syno tree yet. If your system prompt holds a SYNO ROLE CARD, run its join command first; if this is the Console, run start. Until then questions, pushes and session tools wait.`;
+}
+
 function whoami(ctx) {
   const r = ctx.role;
   if (!r) return { code: 0, text: "No role: this session isn't in a Syno Console tree yet. A child session runs the join command from its role card; the Console runs start.", data: null };
+  if (r.inferred) return { code: 0, text: unjoined(r, ctx.cfg), data: r };
   const n = namesFor(r.id, r.name ?? "", ctx.cfg);
   const parent = r.parentId ? ` Parent: ${r.parentId}${r.parentSession ? ` (session ${r.parentSession})` : ""}.` : "";
-  const hint = r.inferred ? " Worked out from the branch name: run the join command from your role card to save the full role." : "";
-  return { code: 0, text: `You are ${n.title} (${r.level} ${r.id}), on branch ${r.branch}.${parent}${r.consoleSession ? ` Console session: ${r.consoleSession}.` : ""}${hint}`, data: r };
+  return { code: 0, text: `You are ${n.title} (${r.level} ${r.id}), on branch ${r.branch}.${parent}${r.consoleSession ? ` Console session: ${r.consoleSession}.` : ""}`, data: r };
 }
 
 function names(ctx) {
@@ -55,11 +61,15 @@ function names(ctx) {
   return { code: 0, text: [`Title: ${n.title}`, `Branch: ${n.branch}`, `Parent: ${n.parentId ?? "none"} (${n.parentBranch ?? "no branch"})`, `Tags: ${n.tags.join(", ")}`].join("\n"), data: n };
 }
 
-function sessions(ctx) {
+function sessions(ctx, n) {
   const r = ctx.role;
-  const parentSession = ctx.flags["parent-session"] ?? r?.session;
+  const direct = n.parentId === r?.id;
+  const parentSession = ctx.flags["parent-session"] ?? (direct ? r?.session : null);
   const consoleSession = ctx.flags["console-session"] ?? r?.consoleSession ?? (r?.level === "console" ? r.session : null);
-  if (!parentSession || !consoleSession) throw usage("Pass --parent-session <your own session ID> and --console-session <the Console's session ID>; get_session shows them.");
+  if (!parentSession || !consoleSession) {
+    const whose = direct ? "your own session ID" : `${n.parentId}'s session ID, since you create this on its behalf`;
+    throw usage(`Pass --parent-session <${whose}> and --console-session <the Console's session ID>; get_session shows them.`);
+  }
   return { parentSession, consoleSession };
 }
 
@@ -87,13 +97,14 @@ function spawn(ctx) {
   const check = checkSpawn({ role: ctx.role, childId, lane, nodes: listRecords(ctx.root, "nodes").records, cfg: ctx.cfg });
   if (!check.ok) throw refusal(`Refused: ${check.reasons.join(" ")}`);
   const n = namesFor(childId, ctx.flags.name, ctx.cfg);
-  const { parentSession, consoleSession } = sessions(ctx);
+  const { parentSession, consoleSession } = sessions(ctx, n);
   const input = ctx.flags["brief-file"] ? readJson(resolve(ctx.cwd, ctx.flags["brief-file"])) : null;
-  const prompt = briefText({ template: template("brief.md"), names: n, parentId: ctx.role.id, brief: input ?? { goal: n.name || n.title, lane } });
+  const prompt = briefText({ template: template("brief.md"), names: n, parentId: n.parentId, brief: input ?? { goal: n.name || n.title, lane } });
   const params = spawnParams({ names: n, repoUrl: repoUrl(ctx.root) ?? ctx.flags["repo-url"] ?? null, card: makeCard(ctx, n, lane, parentSession, consoleSession), brief: prompt, cfg: ctx.cfg });
   const warnings = [];
   if (!params.source_url) warnings.push("No origin URL was found: pass --repo-url https://github.com/<owner>/<repo>.");
   if (!tryGitRead(["rev-parse", "--verify", "--quiet", `refs/remotes/origin/${n.parentBranch}`], { cwd: ctx.root })) warnings.push(`Push your branch first (git push -u origin ${n.parentBranch}), so the new session can start from it.`);
+  if (n.parentId !== ctx.role.id) warnings.push(`You create ${n.id} on ${n.parentId}'s behalf: tell ${n.parentId} its new session ID, so it steers and merges it.`);
   const next = `Then: console record ${n.id} --status running --session <the new session's ID>${n.name ? ` --name "${n.name}"` : ""}${lane.length ? ` --lane "${lane.join(",")}"` : ""} --confirm, commit and push.`;
   const text = [`Ready to create ${n.title} under ${ctx.role.id}.`, ...warnings.map((w) => `Warning: ${w}`), "Call create_session with exactly these parameters:", JSON.stringify(params, null, 2), next].join("\n");
   return { code: 0, text, data: { params, warnings } };
@@ -109,7 +120,9 @@ function verify(ctx) {
 
 function tree(ctx) {
   const live = typeof ctx.flags.live === "string" ? (readJson(resolve(ctx.cwd, ctx.flags.live)) ?? {}) : {};
-  const t = renderTree({ nodes: listRecords(ctx.root, "nodes").records, questions: listRecords(ctx.root, "questions").records, cfg: ctx.cfg, live });
+  const nodes = listRecords(ctx.root, "nodes");
+  const questions = listRecords(ctx.root, "questions");
+  const t = renderTree({ nodes: nodes.records, questions: questions.records, cfg: ctx.cfg, live, skipped: [...nodes.skipped, ...questions.skipped] });
   return { code: 0, text: t.text, data: { verdict: t.verdict } };
 }
 
@@ -139,7 +152,7 @@ function hookContext(raw, cwd) {
 
 function guardHook(raw, cwd) {
   const h = hookContext(raw, cwd);
-  const verdict = h && judge(h.input, { role: h.role, cfg: h.cfg, nodes: listRecords(h.root, "nodes").records, currentBranch: currentBranch(h.root) });
+  const verdict = h && judge(h.input, { role: h.role, cfg: h.cfg, nodes: listRecords(h.root, "nodes").records, currentBranch: currentBranch(h.root), isPushed: pushedCheck(h.root, h.role.branch) });
   return verdict ? { code: 0, text: JSON.stringify({ hookSpecificOutput: { hookEventName: "PreToolUse", ...verdict } }), data: verdict } : NONE;
 }
 
@@ -148,7 +161,8 @@ function briefHook(raw, cwd) {
   if (!h) return NONE;
   const r = h.role;
   let text;
-  if (r.level === "console") {
+  if (r.inferred) text = `Syno Console: ${unjoined(r, h.cfg)}`;
+  else if (r.level === "console") {
     const open = listRecords(h.root, "questions").records.filter((q) => q.status === "open").length;
     text = `Syno Console: this is the Console. ${open} open question(s). See the tree with: node .claude/skills/syno-console/scripts/console.mjs tree`;
   } else {

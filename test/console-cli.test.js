@@ -112,12 +112,14 @@ test("numbers hands out blocks that never overlap", async () => {
   assert.equal((await run(repo, "numbers", "SEC", "--to", "A.M1", "--count", "1", "--start", "1", "--confirm")).code, 2);
 });
 
-test("record is written only by the node's parent", async () => {
+test("record is written only by the node's parent, or an ancestor on its behalf", async () => {
   const repo = await consoleRepo();
   const ok = await run(repo, "record", "A", "--status", "running", "--session", "s-a", "--name", "Foundations", "--confirm");
   assert.equal(ok.code, 0, ok.text);
   assert.equal(json(repo, ".syno/console/nodes/A.json").sessionId, "s-a");
-  assert.equal((await run(repo, "record", "A.M1", "--status", "running", "--confirm")).code, 3);
+  const task = await taskRepo();
+  assert.equal((await run(task, "record", "A.M1.T2", "--status", "running", "--confirm")).code, 3);
+  assert.equal((await run(task, "record", "A.M1", "--status", "running", "--confirm")).code, 3);
   const merged = await run(repo, "record", "A", "--status", "running", "--merge", "abc1234", "--confirm");
   assert.equal(merged.code, 0);
   assert.deepEqual(json(repo, ".syno/console/nodes/A.json").deliveries.map((d) => d.merge), ["abc1234"]);
@@ -171,4 +173,72 @@ test("tree draws the recorded nodes", async () => {
   const t = await run(repo, "tree");
   assert.match(t.text, /^Green: 1 session running/);
   assert.match(t.text, /└─ PhA · Phase A · Foundations — Running/);
+});
+
+test("review: an unjoined session is told to join, not who it is", async () => {
+  const repo = repoOn("claude/syno-pha-m1");
+  const me = await run(repo, "whoami");
+  assert.match(me.text, /hasn't joined/);
+  assert.doesNotMatch(me.text, /^You are/);
+  const brief = JSON.parse((await runConsole(["brief-hook"], { cwd: repo, stdin: JSON.stringify({ cwd: repo }) })).text);
+  assert.match(brief.hookSpecificOutput.additionalContext, /hasn't joined/);
+  assert.equal((await run(repo, "start", "--branch", "claude/syno-pha-m1", "--confirm")).code, 3);
+});
+
+test("review: merged and archived records need the merge commit", async () => {
+  const repo = await consoleRepo();
+  assert.equal((await run(repo, "record", "A", "--status", "merged", "--confirm")).code, 2);
+  assert.equal((await run(repo, "record", "A", "--status", "merged", "--merge", "abc1234", "--confirm")).code, 0);
+  assert.equal((await run(repo, "record", "A", "--status", "archived", "--confirm")).code, 0);
+});
+
+test("review: a corrupt record never lets a number be reused", async () => {
+  const repo = await consoleRepo({ numbers: ["ADR"] });
+  mkdirSync(join(repo, ".syno/console/decisions"), { recursive: true });
+  writeFileSync(join(repo, ".syno/console/decisions/D-0002.json"), "{ broken");
+  writeFileSync(join(repo, "q.json"), JSON.stringify({ question: "Q?", chosen: "A" }));
+  const r = await run(repo, "decide", "--file", "q.json", "--confirm");
+  assert.equal(r.code, 0, r.text);
+  assert.equal(read(repo, ".syno/console/decisions/D-0002.json"), "{ broken");
+  assert.ok(existsSync(join(repo, ".syno/console/decisions/D-0003.json")));
+  mkdirSync(join(repo, ".syno/console/numbers"), { recursive: true });
+  writeFileSync(join(repo, ".syno/console/numbers/ADR.json"), "{ broken");
+  const n = await run(repo, "numbers", "ADR", "--to", "A", "--count", "2", "--start", "1", "--confirm");
+  assert.equal(n.code, 2);
+  assert.match(n.text, /can't read/);
+});
+
+test("review: a phase spawns a task on its milestone's behalf with the milestone as parent", async () => {
+  const repo = repoOn("claude/syno-phase-a");
+  await run(repo, "join", "--id", "A", "--parent-session", "s-con", "--console-session", "s-con", "--session", "s-a", "--confirm");
+  await run(repo, "record", "A.M1", "--status", "running", "--session", "s-m1", "--confirm");
+  assert.equal((await run(repo, "spawn", "A.M1.T1", "--name", "x", "--lane", "src/**")).code, 2);
+  const r = await run(repo, "spawn", "A.M1.T1", "--name", "x", "--lane", "src/**", "--parent-session", "s-m1", "--json");
+  assert.equal(r.code, 0, r.text);
+  assert.match(r.data.params.prompt, /^\[SYNO brief\] A\.M1 → A\.M1\.T1/);
+  assert.match(r.data.params.append_system_prompt, /Your parent: A\.M1, session s-m1/);
+});
+
+test("review: tree survives hand-written records and lists the unreadable ones", async () => {
+  const repo = await consoleRepo();
+  mkdirSync(join(repo, ".syno/console/nodes"), { recursive: true });
+  writeFileSync(join(repo, ".syno/console/nodes/x.json"), JSON.stringify({ status: "running" }));
+  writeFileSync(join(repo, ".syno/console/nodes/console.json"), JSON.stringify({ id: "console", parentId: "console", status: "running" }));
+  writeFileSync(join(repo, ".syno/console/nodes/bad.json"), "{");
+  const t = await run(repo, "tree");
+  assert.equal(t.code, 0, t.text);
+  assert.doesNotMatch(t.text, /undefined/);
+  assert.match(t.text, /Skipped unreadable records: .*bad\.json/);
+});
+
+test("review: the guard hook proves an archive's merge is pushed", async () => {
+  const repo = repoOn("claude/syno-pha-m1");
+  await run(repo, "join", "--id", "A.M1", "--parent-session", "s-a", "--console-session", "s-con", "--confirm");
+  const sha = git(repo, "rev-parse", "HEAD").trim();
+  await run(repo, "record", "A.M1.T1", "--status", "merged", "--session", "s-t1", "--merge", sha, "--confirm");
+  const archive = JSON.stringify({ tool_name: "mcp__claude-code-remote__archive_session", tool_input: { session_id: "s-t1" }, cwd: repo });
+  const before = await runConsole(["guard"], { cwd: repo, stdin: archive });
+  assert.match(JSON.parse(before.text).hookSpecificOutput.permissionDecisionReason, /pushed/);
+  git(repo, "update-ref", "refs/remotes/origin/claude/syno-pha-m1", sha);
+  assert.deepEqual(await runConsole(["guard"], { cwd: repo, stdin: archive }), { code: 0, text: "", data: null });
 });

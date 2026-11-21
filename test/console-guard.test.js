@@ -86,19 +86,19 @@ test("AC-CN.6 G-SPAWN creates only the next level, named, in auto mode, with a r
   denied(judge(cs({ permission_mode: "bypassPermissions" }), ctx(MS)), /auto/);
   denied(judge(cs({ permission_mode: undefined }), ctx(MS)), /auto/);
   denied(judge(cs({ append_system_prompt: "hello" }), ctx(MS)), /role card/);
-  denied(judge(cs({}), ctx(PH)), /next level/);
+  denied(judge(cs({ title: "PhN·M1 · x", outcome_branch: "claude/syno-phn-m1" }), ctx(PH)), /next level/);
   allowed(judge({ tool_name: CREATE, tool_input: { ...good, title: "PhN · Phase N", outcome_branch: "claude/syno-phase-n" } }, ctx(CON)));
 });
 
 test("AC-CN.6 G-ARCHIVE only for a merged child of this session", () => {
   const nodes = [
-    { id: "A.M100.T04", parentId: "A.M100", sessionId: "s-merged", status: "merged" },
+    { id: "A.M100.T04", parentId: "A.M100", sessionId: "s-merged", status: "merged", mergeCommit: "abc" },
     { id: "A.M100.T05", parentId: "A.M100", sessionId: "s-run", status: "running" },
     { id: "A.M100.T06", parentId: "A.M100", sessionId: "s-stop", status: "stopped" },
-    { id: "A.M101.T01", parentId: "A.M101", sessionId: "s-other", status: "merged" },
+    { id: "A.M101.T01", parentId: "A.M101", sessionId: "s-other", status: "merged", mergeCommit: "def" },
   ];
   const ar = (sid) => ({ tool_name: ARCHIVE, tool_input: { session_id: sid } });
-  allowed(judge(ar("s-merged"), ctx(MS, { nodes })));
+  allowed(judge(ar("s-merged"), ctx(MS, { nodes, isPushed: () => true })));
   allowed(judge(ar("s-stop"), ctx(MS, { nodes })));
   for (const sid of ["s-run", "s-unknown", "s-other"]) denied(judge(ar(sid), ctx(MS, { nodes })), /proven merged/);
   denied(judge({ tool_name: "mcp__github__merge_pull_request", tool_input: { pullNumber: 1 } }, ctx(CON)), /owner merges/);
@@ -128,4 +128,92 @@ test("matchers cover the guarded tools", () => {
   for (const t of ["Bash", "Write", "AskUserQuestion", CREATE, ARCHIVE, "mcp__github__merge_pull_request"]) assert.ok(full.test(t), t);
   assert.ok(!full.test("Read"));
   assert.ok(plugin.test(CREATE) && plugin.test("AskUserQuestion") && !plugin.test("Bash") && !plugin.test("Write"));
+});
+
+// ---- Final review fixes (wrappers, GitHub tools, unjoined sessions, archive proof, ancestors) ----
+
+test("review: pushes inside shell wrappers, subshells, -c strings and loops are judged", () => {
+  const own = TASK.branch;
+  const P = "claude/syno-pha-m100";
+  const bad = [
+    `for i in 1 2 3; do git push origin ${P}; done`,
+    `timeout 60 git push origin ${P}`,
+    `if git push origin ${P}; then echo ok; fi`,
+    `! git push origin ${P}`,
+    `cd x && (git push origin ${P})`,
+    `{ git push origin ${P}; }`,
+    `env A=1 git push origin ${P}`,
+    `sudo -E git push origin ${P}`,
+    `bash -c "git push origin ${P}"`,
+    `sh -c 'cd x && git push origin ${P}'`,
+    `echo $(git push origin ${P})`,
+    "echo `git push origin main`",
+    "(gh pr merge 3)",
+    "gh api -X PUT repos/o/r/pulls/3/merge",
+  ];
+  for (const c of bad) denied(judge(bash(c), ctx(TASK)));
+  const ok = [
+    `for i in 1 2 3; do git push -u origin ${own} && break; sleep 2; done`,
+    `(git push origin ${own})`,
+    `cat > notes.md <<'EOF'\ngit push origin main\nEOF\ngit add notes.md`,
+    `git commit -m "explain: git push origin main is the owner's step"`,
+    `git log --grep push`,
+  ];
+  for (const c of ok) allowed(judge(bash(c), ctx(TASK)));
+});
+
+test("review: GitHub write tools follow the own-branch and owner-merges rules", () => {
+  const gh = (tool, input) => ({ tool_name: `mcp__github__${tool}`, tool_input: { owner: "o", repo: "r", ...input } });
+  allowed(judge(gh("push_files", { branch: TASK.branch, files: [] }), ctx(TASK)));
+  denied(judge(gh("push_files", { branch: "main", files: [] }), ctx(TASK)), /own branch/);
+  denied(judge(gh("push_files", { files: [] }), ctx(TASK)), /own branch/);
+  denied(judge(gh("create_or_update_file", { branch: "claude/syno-pha-m100", path: "a" }), ctx(TASK)));
+  denied(judge(gh("delete_file", { branch: "main", path: "a" }), ctx(CON)));
+  allowed(judge(gh("create_branch", { branch: TASK.branch }), ctx(TASK)));
+  denied(judge(gh("create_branch", { branch: "claude/other" }), ctx(TASK)));
+  denied(judge(gh("enable_pr_auto_merge", { pullNumber: 1 }), ctx(CON)), /owner merges/);
+  denied(judge(gh("update_pull_request_branch", { pullNumber: 1 }), ctx(MS)));
+  allowed(judge(gh("update_pull_request_branch", { pullNumber: 1 }), ctx(CON)));
+  const full = new RegExp(`^(${GUARD_MATCHER})$`);
+  const plugin = new RegExp(`^(${PLUGIN_MATCHER})$`);
+  for (const t of ["push_files", "create_or_update_file", "delete_file", "create_branch", "update_pull_request_branch", "enable_pr_auto_merge"]) {
+    assert.ok(full.test(`mcp__github__${t}`) && plugin.test(`mcp__github__${t}`), t);
+  }
+});
+
+test("review: a session whose role was only worked out from the branch is held until it joins", () => {
+  const unjoined = { ...MS, inferred: true };
+  denied(judge({ tool_name: "AskUserQuestion", tool_input: { questions: [] } }, ctx(unjoined)), /join/);
+  denied(judge(bash(`git push -u origin ${MS.branch}`), ctx(unjoined)), /join/);
+  denied(judge({ tool_name: CREATE, tool_input: { title: "PhA·M100·T05", outcome_branch: "claude/syno-pha-m100-t05", permission_mode: "auto", append_system_prompt: MARKER } }, ctx(unjoined)), /join/);
+  denied(judge({ tool_name: ARCHIVE, tool_input: { session_id: "s" } }, ctx(unjoined)), /join/);
+  allowed(judge(bash("ls -la && npm test"), ctx(unjoined)));
+  allowed(judge({ tool_name: "Write", tool_input: { file_path: "/r/src/a.js" } }, ctx(unjoined)));
+  denied(judge({ tool_name: "AskUserQuestion", tool_input: { questions: [] } }, ctx({ ...CON, inferred: true })), /start/);
+});
+
+test("review: archive needs a recorded merge that is pushed", () => {
+  const node = (over) => ({ id: "A.M100.T04", parentId: "A.M100", sessionId: "s1", status: "merged", mergeCommit: "abc1234", ...over });
+  const ar = { tool_name: ARCHIVE, tool_input: { session_id: "s1" } };
+  allowed(judge(ar, ctx(MS, { nodes: [node()], isPushed: (sha) => sha === "abc1234" })));
+  denied(judge(ar, ctx(MS, { nodes: [node()], isPushed: () => false })), /pushed/);
+  denied(judge(ar, ctx(MS, { nodes: [node()] })), /pushed/);
+  denied(judge(ar, ctx(MS, { nodes: [node({ mergeCommit: null })], isPushed: () => true })), /proven merged/);
+  denied(judge(ar, ctx(MS, { nodes: [node({ status: "archived", mergeCommit: null })], isPushed: () => true })), /proven merged/);
+  allowed(judge(ar, ctx(MS, { nodes: [node({ status: "stopped", mergeCommit: null })] })));
+});
+
+test("review: an ancestor may create and archive a descendant on its child's behalf", () => {
+  const cs = (title, branch) => ({ tool_name: CREATE, tool_input: { title, outcome_branch: branch, permission_mode: "auto", append_system_prompt: MARKER } });
+  allowed(judge(cs("PhA·M100·T05 · x", "claude/syno-pha-m100-t05"), ctx(PH)));
+  denied(judge(cs("PhN·M1·T1 · x", "claude/syno-phn-m1-t1"), ctx(PH)), /own part of the tree/);
+  const nodes = [{ id: "A.M100.T04", parentId: "A.M100", sessionId: "s1", status: "merged", mergeCommit: "abc" }];
+  allowed(judge({ tool_name: ARCHIVE, tool_input: { session_id: "s1" } }, ctx(PH, { nodes, isPushed: () => true })));
+});
+
+test("review: the guard's own files and the role file are kept from Edit and Write below the Console", () => {
+  const w = (file_path) => ({ tool_name: "Edit", tool_input: { file_path } });
+  denied(judge(w("/r/.claude/skills/syno-console/scripts/guard.mjs"), ctx(TASK)));
+  denied(judge(w(".syno/local/console/role.json"), ctx(MS)));
+  allowed(judge(w("/r/.claude/skills/syno-console/scripts/guard.mjs"), ctx(CON)));
 });

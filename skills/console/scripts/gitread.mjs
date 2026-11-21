@@ -5,7 +5,7 @@
 import { execFileSync } from "node:child_process";
 import { refusal } from "./model.mjs";
 
-const READ_ONLY = new Set(["rev-parse", "merge-base", "log", "for-each-ref"]);
+const READ_ONLY = new Set(["rev-parse", "merge-base", "log", "for-each-ref", "show"]);
 const FORBIDDEN_ARG = /^(--output|--exec|--upload-pack|--receive-pack|--config-env|--ext-diff|--textconv|-c$)/;
 const ENV = { GIT_TERMINAL_PROMPT: "0", GIT_OPTIONAL_LOCKS: "0", LC_ALL: "C" };
 
@@ -47,6 +47,18 @@ export function isAncestor(a, b, { cwd } = {}) {
     if (err.status === 1) return false;
     throw err;
   }
+}
+
+/** A check for the guard: is `sha` in the pushed copy of `branch` (as far as the last fetch or push knows)? */
+export function pushedCheck(root, branch) {
+  return (sha) => {
+    if (!/^[0-9a-f]{4,64}$/i.test(String(sha ?? ""))) return false;
+    try {
+      return isAncestor(sha, `refs/remotes/origin/${branch}`, { cwd: root });
+    } catch {
+      return false;
+    }
+  };
 }
 
 /** `https://github.com/<owner>/<repo>` for create_session's source_url: no credentials, proxy host or `.git`. */

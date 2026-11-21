@@ -5,6 +5,7 @@
 // twice (as the Governor does, AC-GO.2). Reads only; fails open.
 import { join } from "node:path";
 import { readText } from "../fsutil.js";
+import { pushedCheck } from "../../../skills/console/scripts/gitread.mjs";
 import { judge } from "../../../skills/console/scripts/guard.mjs";
 import { namesFor } from "../../../skills/console/scripts/model.mjs";
 import { currentBranch, findRoot, listRecords, loadConfig, resolveRole } from "../../../skills/console/scripts/store.mjs";
@@ -15,6 +16,7 @@ const CLOUD_COPY = "syno-console/scripts/console.mjs";
 export const cloudCopyActive = (root) => (readText(join(root, ".claude", "settings.json")) ?? "").includes(CLOUD_COPY);
 
 function briefLine(root, role, cfg) {
+  if (role.inferred) return `Console: this checkout's branch belongs to ${role.id}, but this session hasn't joined its Syno tree yet. Run the join command from its role card (or start, in the Console) first.`;
   if (role.level === "console") {
     const open = listRecords(root, "questions").records.filter((q) => q.status === "open").length;
     return `Console: this is Syno Console; ${open} open question(s). /syno:console status shows the tree.`;
@@ -31,6 +33,6 @@ export function handle(event, input, env) {
   const role = resolveRole(root, cfg);
   if (!role) return null;
   if (event === "SessionStart") return { lines: [briefLine(root, role, cfg)] };
-  const decision = judge(input, { role, cfg, nodes: listRecords(root, "nodes").records, currentBranch: currentBranch(root) });
+  const decision = judge(input, { role, cfg, nodes: listRecords(root, "nodes").records, currentBranch: currentBranch(root), isPushed: pushedCheck(root, role.branch) });
   return decision ? { decision } : null;
 }

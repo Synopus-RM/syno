@@ -760,20 +760,21 @@ Runs a project as a tree of Claude Code cloud sessions: one **Syno Console**, th
    1. fetches and runs `syno console verify`, which reads only. It gives Green, Amber (needs sync, outside the lane, the head differs from the report) or Red (Console records, or records outside the child's subtree, changed).
    2. merges with `--no-ff`
    3. runs the checks
-   4. records with `syno console record --status merged`
+   4. records with `syno console record --status merged --merge <sha>`
    5. pushes, and only then archives the child.
 
    With `console.rolling`, each finished task goes up the chain at once, and each level merges down after each consolidation.
 7. **Standing rules.** At `start` the owner approves R-0001 to R-0012. They are the owner's standing yes for the routine steps of the tree: creating children within the limits, pushing a session's own branch, checked merges, records of one's own children, and archiving after a merge. Syno's code still never pushes, fetches, merges or creates sessions. Claude does those steps, inside these rules. Only the owner merges into the default branch, from one combined draft PR.
-8. **Guard.** It runs in the hook dispatcher, and in the cloud copy's own hook. Below the Console it refuses:
-   - the question dialog and plan mode (`askAt` allowing)
-   - a push to any branch but the session's own, a force-push, a branch delete, pushing every branch, and tags
-   - a session of the wrong level, without auto mode or without a role card
-   - archiving a child that isn't recorded as merged
-   - merging pull requests, at every level
-   - edits to the Console's records (cloud copy)
+8. **Guard.** It runs in the hook dispatcher, and in the cloud copy's own hook. It refuses:
+   - below the Console, the question dialog and plan mode (`askAt` allowing)
+   - a push to any branch but the session's own, a force-push, a branch delete, pushing every branch, and tags. This covers pushes inside loops, subshells, wrappers and `sh -c`, and GitHub's write tools.
+   - a session outside its own part of the tree (its next level, or deeper on a child's behalf), without auto mode or without a role card
+   - archiving a child unless its recorded merge commit is in the pushed branch
+   - merging pull requests or turning on auto-merge, at every level
+   - below the Console, edits to the Console's records and to the guard's own files (cloud copy)
+   - questions, pushes and session tools of a session whose role was only worked out from its branch, until it joins (a new session starts on its parent's branch)
 
-   Outside a tree it does nothing, and it fails open.
+   Outside a tree it does nothing, and it fails open. `verify` turns red when a child removes the guard hook, edits the guard's files or changes the `console` config group.
 9. **Records** in `.syno/console/`: `nodes/<id>.json`, `reports/<id>.md`, `decisions/`, `rules/`, `questions/` and `numbers/`. Each has one writer and a schema in `schemas/console-*.schema.json`. Each session's role is in `.syno/local/console/role.json`, which git ignores.
 10. **Cloud copy.** Cloud sessions can't load the owner's plugins. `syno console install` copies the skill and its script into `.claude/skills/syno-console/` and adds the guard and brief hooks to `.claude/settings.json`, keeping every other key. `install --check` reports a stale or edited copy. The plugin's handler stays quiet where the cloud copy's hook is present.
 11. **Syno Tasks, Sigma, Pulse.** When the Console merges a delivery, it marks each merged task that has a `ref` done with `syno tasks set <ref> done`, which runs the done gate. There are no new Sigma defect types and no new Pulse events in 0.3. Task updates reach Pulse as the usual `tasks.snapshot` where Pulse is set up.

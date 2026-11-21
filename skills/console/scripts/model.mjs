@@ -205,20 +205,26 @@ function laneReasons(childId, lane, running, cfg) {
   return reasons;
 }
 
+/** True when `id` lies in `role`'s part of the tree, below it: its children, or deeper on a child's behalf. */
+const inSubtree = (role, child) => (role.level === "console" ? child.level !== "console" : child.id.startsWith(`${role.id}.`));
+
 /** Whether `role` may create `childId` now (design 5.2, 5.3). Read-only. */
 export function checkSpawn({ role, childId, lane = [], nodes = [], cfg }) {
   if (!role) return { ok: false, reasons: ["This session has no Syno Console role yet. Run join first."] };
   const child = parseId(childId);
   const next = childLevel(role.level);
-  if (!child || child.parentId !== role.id || child.level !== next) {
-    return { ok: false, reasons: [`${role.id} can create only its next level (${next ?? "none"}) directly under it, not ${childId}.`] };
+  if (!child || !next || !inSubtree(role, child)) {
+    return { ok: false, reasons: [`${role.id} can create only its next level (${next ?? "none"}) under it, or deeper on a child's behalf; not ${childId}.`] };
   }
   const reasons = [];
+  const direct = child.parentId === role.id || (role.level === "console" && child.level === "phase");
+  const parentNode = nodes.find((n) => n.id === child.parentId);
+  if (!direct && !RUNNING.has(parentNode?.status)) reasons.push(`${child.parentId} isn't running, so ${child.id} has no parent to report to.`);
   const existing = nodes.find((n) => n.id === child.id);
   if (existing && existing.status !== "planned") reasons.push(`${child.id} already exists (${existing.status}).`);
-  const running = nodes.filter((n) => n.parentId === role.id && n.id !== child.id && RUNNING.has(n.status));
-  if (child.level === "task" && running.length >= cfg.limits.maxTasks) reasons.push(`${role.id} already has ${running.length} tasks running; at most ${cfg.limits.maxTasks} tasks run at once.`);
-  if (child.level === "milestone" && running.length >= cfg.limits.maxMilestones) reasons.push(`${role.id} already has ${running.length} milestones running; at most ${cfg.limits.maxMilestones} milestones run at once.`);
+  const running = nodes.filter((n) => n.parentId === child.parentId && n.id !== child.id && RUNNING.has(n.status));
+  if (child.level === "task" && running.length >= cfg.limits.maxTasks) reasons.push(`${child.parentId} already has ${running.length} tasks running; at most ${cfg.limits.maxTasks} tasks run at once.`);
+  if (child.level === "milestone" && running.length >= cfg.limits.maxMilestones) reasons.push(`${child.parentId} already has ${running.length} milestones running; at most ${cfg.limits.maxMilestones} milestones run at once.`);
   if (child.level === "task") reasons.push(...laneReasons(child.id, lane, running, cfg));
   return { ok: reasons.length === 0, reasons };
 }
