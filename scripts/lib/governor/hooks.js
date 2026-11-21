@@ -25,6 +25,8 @@ export function standaloneEnabled(cwd, home = homedir()) {
 export async function handle(event, input, env) {
   const name = HOOKS[event];
   if (!name) return null;
+  // The Governor gates heavy Bash commands only; other tools reach the dispatcher for Syno Console's guard.
+  if (event === "PreToolUse" && input?.tool_name && input.tool_name !== "Bash") return null;
   if (standaloneEnabled(env.cwd)) {
     return event === "SessionStart" ? { lines: ["Governor: the standalone Workload Governor plugin is still enabled, so Syno's Governor stays quiet until it is retired (/syno:migrate)."] } : null;
   }

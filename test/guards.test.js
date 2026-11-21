@@ -25,6 +25,7 @@ export const PROCESS_ALLOWED = {
   "scripts/governor/": "ported Workload Governor queue runner (gov run)",
   "skills/progress/scripts/collect.mjs": "Syno Progress reads git (read-only) to collect facts",
   "skills/tasks/scripts/collect.mjs": "Syno Tasks reads git (read-only) to collect facts",
+  "skills/console/scripts/gitread.mjs": "Syno Console reads git (read-only, its own allowlist) to check a child before a merge",
 };
 export const SIZE_EXEMPT = { "scripts/governor/": "ported Workload Governor 0.2.0, kept as it was", "skills/": "tools ported with their skills, kept as they were" };
 const PURE_DIRS = ["scripts/lib/report/", "scripts/lib/chronicle/render/"];

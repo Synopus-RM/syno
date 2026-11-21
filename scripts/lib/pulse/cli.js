@@ -18,7 +18,7 @@ import { segments, readSegment } from "./queue.js";
 import { acceptedTypes, cachedStatus, clearRevoked, isRevoked } from "./state.js";
 
 export const PLUGIN_ID = "syno@synopus";
-export const MARKETPLACE = { source: { source: "github", repo: "rishimurugan-synopus/syno" } };
+export const MARKETPLACE = { source: { source: "github", repo: "Synopus-RM/syno" } };
 
 export const NOTICE = `Syno Pulse — what this machine will send (notice version 2)
 

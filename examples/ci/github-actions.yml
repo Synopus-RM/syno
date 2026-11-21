@@ -27,7 +27,7 @@ jobs:
           node-version: 20
 
       - name: Get Syno (pinned to a release)
-        run: git clone --depth 1 --branch v0.1.0 https://github.com/rishimurugan-synopus/syno.git "$RUNNER_TEMP/syno"
+        run: git clone --depth 1 --branch v0.1.0 https://github.com/Synopus-RM/syno.git "$RUNNER_TEMP/syno"
 
       - name: Records are valid
         run: node "$RUNNER_TEMP/syno/scripts/syno.js" validate

@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Synopus-RM/syno/schemas/console-rule.schema.json",
+  "title": "Syno Console standing rule (.syno/console/rules/R-nnnn.json), written by the Console only",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "id",
+    "text",
+    "scope",
+    "since",
+    "supersedes"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^R-\\d{4,}$",
+      "patternHint": "a rule ID like R-0001"
+    },
+    "text": {
+      "type": "string",
+      "minLength": 10
+    },
+    "scope": {
+      "type": "string"
+    },
+    "since": {
+      "type": "string",
+      "format": "date"
+    },
+    "supersedes": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^R-\\d{4,}$"
+    }
+  }
+}

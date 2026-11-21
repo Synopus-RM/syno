@@ -32,7 +32,8 @@
     "fives": "Syno 5S",
     "compliance": "Syno Compliance",
     "security": "Syno Security",
-    "status": "Syno Status"
+    "status": "Syno Status",
+    "console": "Syno Console"
   },
   "jargon": [
     "API", "branch", "CI", "CLI", "commit", "CORS", "critical path", "DLT", "DPDP", "DPMO", "endpoint",

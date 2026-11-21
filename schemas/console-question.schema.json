@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Synopus-RM/syno/schemas/console-question.schema.json",
+  "title": "Syno Console question (.syno/console/questions/Q-<origin>-<nn>.json), written by the Console only",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "id",
+    "from",
+    "path",
+    "text",
+    "options",
+    "blocking",
+    "status",
+    "decision",
+    "receivedAt"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^Q-[A-Z0-9.]+-\\d{2,}$",
+      "patternHint": "a question ID like Q-A.M1.T1-01"
+    },
+    "from": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9]{0,5}(\\.M[A-Z0-9]{1,8}(\\.T[A-Z0-9]{1,8})?)?$",
+      "patternHint": "a node ID like A, A.M1 or A.M1.T1"
+    },
+    "path": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "options": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "blocking": {
+      "type": "boolean"
+    },
+    "status": {
+      "enum": [
+        "open",
+        "answered"
+      ]
+    },
+    "decision": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^D-\\d{4,}$"
+    },
+    "receivedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

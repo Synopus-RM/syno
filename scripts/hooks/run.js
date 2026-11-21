@@ -18,6 +18,7 @@ const lib = (rel) => fileURLToPath(new URL(`../lib/${rel}`, import.meta.url));
 // Order matters: the Governor gates first, Pulse records, then the briefs.
 export const HANDLERS = [
   { name: "governor", path: lib("governor/hooks.js"), budgetMs: 12000 },
+  { name: "console", path: lib("console/hooks.js"), budgetMs: 200 },
   { name: "pulse", path: lib("pulse/hooks.js"), budgetMs: 100 },
   { name: "chronicle", path: lib("chronicle/hooks.js"), budgetMs: 1000 },
   { name: "pause", path: lib("pause/hooks.js"), budgetMs: 200 },
