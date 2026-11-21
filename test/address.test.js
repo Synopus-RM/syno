@@ -24,3 +24,10 @@ test("§15 the install address is Synopus-RM/syno wherever people copy it", () =
 test("S-02 Pulse writes the current marketplace address into project settings", () => {
   assert.deepEqual(MARKETPLACE, { source: { source: "github", repo: "Synopus-RM/syno" } });
 });
+
+test("§15 plugin.json and package.json carry the same Syno version", () => {
+  const manifest = JSON.parse(read(".claude-plugin/plugin.json"));
+  const pkg = JSON.parse(read("package.json"));
+  assert.match(manifest.version, /^\d+\.\d+\.\d+$/);
+  assert.equal(pkg.version, manifest.version);
+});

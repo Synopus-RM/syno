@@ -1,7 +1,7 @@
 {
   "name": "syno",
   "displayName": "Syno",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Synopus's all-in-one Claude Code plugin: version record, project progress, tasks, audit, device apps, plain-language tests, parallel agents, PRDs, prompts, workload limits, pause and resume, Six Sigma quality gates, 5S, compliance and security checks, and Syno Pulse reporting to the Synopus PM panel.",
   "author": {
     "name": "Synopus",

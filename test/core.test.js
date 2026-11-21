@@ -88,10 +88,11 @@ test("X-04 parseArgs reads flags in all three forms", () => {
 });
 
 test("X-04 the CLI prints its version and uses the documented exit codes", () => {
+  const { version } = JSON.parse(readFileSync(fileURLToPath(new URL("../.claude-plugin/plugin.json", import.meta.url)), "utf8"));
   const v = cli("version");
   assert.equal(v.status, 0);
-  assert.equal(v.stdout.trim(), "0.1.0");
-  assert.deepEqual(JSON.parse(cli("version", "--json").stdout), { version: "0.1.0" });
+  assert.equal(v.stdout.trim(), version);
+  assert.deepEqual(JSON.parse(cli("version", "--json").stdout), { version });
   assert.equal(cli("no-such-function").status, 2);
   assert.match(cli("help").stdout, /--confirm/);
 });
